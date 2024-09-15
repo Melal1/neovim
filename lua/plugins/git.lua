@@ -1,8 +1,18 @@
 return {
 
   "lewis6991/gitsigns.nvim",
+  event = "BufRead",
   config = function ()
-    require('gitsigns').setup {
+      vim.keymap.set( 'n', '<leader>gnh', '<cmd>lua require"gitsigns".next_hunk()<CR>' )
+      vim.keymap.set( 'n', '<leader>gph', '<cmd>lua require"gitsigns".prev_hunk()<CR>' )
+      vim.keymap.set( 'n', '<leader>gsh', '<cmd>lua require"gitsigns".stage_hunk()<CR>' )
+      vim.keymap.set( 'n', '<leader>guh', '<cmd>lua require"gitsigns".undo_stage_hunk()<CR>' )
+      vim.keymap.set( 'n', '<leader>grh', '<cmd>lua require"gitsigns".reset_hunk()<CR>' )
+      vim.keymap.set( 'n', '<leader>gRb', '<cmd>lua require"gitsigns".reset_buffer()<CR>' )
+      vim.keymap.set( 'n', '<leader>gph', '<cmd>lua require"gitsigns".preview_hunk()<CR>' )
+      vim.keymap.set( 'n', '<leader>gbh', '<cmd>lua require"gitsigns".blame_line()<CR>' )
+      vim.keymap.set( 'n', '<leader>gts', '<cmd>lua require"gitsigns".toggle_signs()<CR>' )
+    require('gitsigns').setup({
   signs = {
     add          = { text = '┃' },
     change       = { text = '┃' },
@@ -51,7 +61,7 @@ return {
     row = 0,
     col = 1
   },
-}
+})
   end
 
 }
