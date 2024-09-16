@@ -9,10 +9,11 @@ return {
   {
 
     "WhoIsSethDaniel/mason-tool-installer.nvim",
+    lazy = false,
     config = function()
       require("mason-tool-installer").setup({
 
-        ensure_installed = { "lua_ls", "stylua" ,"clangd" },
+        ensure_installed = { "lua_ls", "stylua" ,"clangd", "shfmt", "bashls", "shellcheck"}, -- shellcheck is important for bashls " I dunno why :D"
 
         integrations = {
           ["mason-lspconfig"] = true,
@@ -43,6 +44,9 @@ return {
         capabilities = capabilities,
       })
 
+      lspconfig.bashls.setup({
+        capabilities = capabilities,
+      })
       vim.keymap.set("n", "<leader>lmk", vim.lsp.buf.hover, {})
       vim.keymap.set("n", "<leader>rn", vim.lsp.buf.rename, {})
       vim.keymap.set("n", "gD", vim.lsp.buf.definition, {})
