@@ -1,8 +1,8 @@
 return {
 	"goolord/alpha-nvim",
 	dependencies = {
-		"echasnovski/mini.icons",
-	},
+    "echasnovski/mini.icons",
+  },
 	config = function()
 		local alpha = require("alpha")
 		local dashboard = require("alpha.themes.dashboard")
@@ -30,9 +30,7 @@ return {
 		dashboard.config.opts.noautocmd = true
 
 
-vim.cmd([[
-  autocmd User AlphaReady echo 'Hello ' . expand('$USER') . ' ! Welcome to NeoVim!'
-]])
+vim.cmd([[ autocmd User AlphaReady echo 'Hello ' . expand('$USER') . ' ! Welcome to NeoVim!' ]])
 		alpha.setup(dashboard.config)
 	end,
 }
