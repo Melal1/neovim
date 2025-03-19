@@ -11,6 +11,7 @@ return {
         none_ls.builtins.formatting.stylua,
         none_ls.builtins.formatting.shfmt,
         none_ls.builtins.formatting.clang_format,
+        none_ls.builtins.formatting.nixpkgs_fmt,
         -- require("none-ls-shellcheck.diagnostics"),
         -- require("none-ls-shellcheck.code_actions"),
       },
