@@ -15,7 +15,6 @@ vim.keymap.set("n", "<leader>cd", "<cmd>:lcd %:p:h<CR>")
 vim.keymap.set("v", "<c-c>", '"+y')
 -- vim.keymap.set("n", "<c-v>", '"+p')
 vim.keymap.set("x", "<c-c>", '"+y')
-vim.api.nvim_set_keymap("n", "<leader>ts", "<cmd>lua require('switch').show()<CR>", { noremap = true, silent = true })
 
 -- Windows resizing
 vim.keymap.set("n", "<C-up>", "1<C-w>+", { noremap = true, silent = true })
@@ -24,8 +23,11 @@ vim.keymap.set("n", "<C-right>", "1<C-w>>", { noremap = true, silent = true })
 vim.keymap.set("n", "<C-left>", "1<C-w><", { noremap = true, silent = true })
 vim.keymap.set("n", "<C-c", "<C-o><", { noremap = true, silent = true })
 vim.keymap.set("n", "<leader>rlt", function()
-	vim.cmd.colorscheme(require("config.utils").apply_theme())
+  vim.cmd.colorscheme(require("config.utils").apply_theme())
 end)
+
 vim.keymap.set("n", "<leader>td", function()
-	require("config.utils").open_floating_todo()
-end)
+  require("config.utils").open_floating_todo() -- Call the function directly
+end, { noremap = true, silent = true, desc = "Open TODO in floating window" })
+
+-- vim.api.nvim_set_keymap("n", "<c-k>", "require('config.utils').open_floating_todo()", { silent = true })
