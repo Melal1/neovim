@@ -2,6 +2,7 @@
 -- Leader key is set to space
 vim.g.mapleader = " "
 vim.keymap.set("i", "jk", "<ESC>")
+vim.keymap.set("t", "<ESC>", "<C-\\><C-n>")
 --Search and replace
 vim.keymap.set("n", "<leader>a", [[:%s/\<<C-r><C-w>\>/<C-r><C-w>/gc<Left><Left><Left>]])
 vim.keymap.set("n", "<leader>h", ":noh<CR>")
@@ -23,11 +24,12 @@ vim.keymap.set("n", "<C-right>", "1<C-w>>", { noremap = true, silent = true })
 vim.keymap.set("n", "<C-left>", "1<C-w><", { noremap = true, silent = true })
 vim.keymap.set("n", "<C-c", "<C-o><", { noremap = true, silent = true })
 vim.keymap.set("n", "<leader>rlt", function()
-  vim.cmd.colorscheme(require("config.utils").apply_theme())
+	vim.cmd.colorscheme(require("config.utils").apply_theme())
 end)
 
 vim.keymap.set("n", "<leader>td", function()
-  require("config.utils").open_floating_todo() -- Call the function directly
+	require("config.utils").open_floating_todo() -- Call the function directly
 end, { noremap = true, silent = true, desc = "Open TODO in floating window" })
-
--- vim.api.nvim_set_keymap("n", "<c-k>", "require('config.utils').open_floating_todo()", { silent = true })
+vim.keymap.set("n", "<S-Tab>", "<cmd>bprev!<CR>", { silent = true })
+vim.keymap.set("n", "<Tab>", "<cmd>bnext!<CR>", { silent = true })
+vim.keymap.set("n", "<leader>bd", "<cmd>bdelete!<CR>", { silent = true })

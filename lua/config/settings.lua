@@ -13,4 +13,7 @@ vim.cmd("set writebackup")
 --vim.cmd("set swapfile")
 vim.cmd("set undofile")
 vim.cmd("set updatetime=250")
+-- Color.lua
+vim.opt.termguicolors = true
+---
 vim.loader.enable()
