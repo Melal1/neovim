@@ -2,6 +2,7 @@
 
 - This is my Neovim setup tailored for NixOS. I plan to revisit and refine every plugin during my free time.
 ## Configuration Structure
+```
 ├── init.lua                    # Entry point for Neovim configuration
 ├── lazy-lock.json              # Lockfile for Lazy.nvim plugin versions
 └── lua                         # Core Lua configuration directory
@@ -41,6 +42,7 @@
         ├── treejs.lua          # Treesitter-based JS enhancements (disabled)
         ├── treesitter.lua      # Treesitter syntax highlighting
         └── undotree.lua        # Undo history visualization
+```
 ## Notes
 
 - Plugins marked as "disabled" (e.g., debugger.lua, treejs.lua) are currently inactive but retained for future use.
