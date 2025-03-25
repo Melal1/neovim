@@ -4,6 +4,8 @@ return {
     "nvimtools/none-ls-extras.nvim",
     "gbprod/none-ls-shellcheck.nvim", -- shellcheck
   },
+  event = "VeryLazy",
+
   config = function()
     local none_ls = require("null-ls")
     none_ls.setup({
@@ -27,7 +29,7 @@ return {
             buffer = bufnr,
             callback = function()
               vim.lsp.buf.format({ bufnr = bufnr })
-            end
+            end,
           })
         end
       end,
@@ -35,4 +37,3 @@ return {
     vim.keymap.set("n", "<leader>frm", vim.lsp.buf.format, {})
   end,
 }
-

@@ -1,18 +1,18 @@
 return {
-    "lukas-reineke/indent-blankline.nvim",
-    main = "ibl",
-    ---@module "ibl"
-    ---@type ibl.config
-    opts = {},
-    config = function()
-        require("ibl").setup({
+	"lukas-reineke/indent-blankline.nvim",
+	event = "Bufread",
+	main = "ibl",
+	---@module "ibl"
+	---@type ibl.config
+	opts = {},
 
+	config = function()
+		require("ibl").setup({
 
-      scope = {
+			scope = {
 
-        enabled = false, 
-      },
-
-    })
-    end,
+				enabled = false,
+			},
+		})
+	end,
 }

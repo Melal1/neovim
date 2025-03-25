@@ -3,12 +3,14 @@ local builtin = require("telescope.builtin")
 return {
 	{
 		"nvim-telescope/telescope.nvim",
+		event = "VeryLazy",
 		tag = "0.1.8",
 		dependencies = {
 			"nvim-lua/plenary.nvim",
 			"nvim-telescope/telescope-ui-select.nvim",
 			"ahmedkhalf/project.nvim",
 		},
+
 		config = function()
 			telescope.setup({
 				pickers = {
@@ -29,7 +31,7 @@ return {
 			vim.keymap.set("n", "<leader>fb", builtin.buffers, {})
 			vim.keymap.set("n", "<leader>fh", builtin.help_tags, {})
 			vim.keymap.set("n", "<leader>fp", "<cmd>:Telescope projects<cr>", {})
-      -- Custom : will try to open def if failed open it on telescope
+			-- Custom : will try to open def if failed open it on telescope
 			vim.keymap.set("n", "gd", function()
 				local path = vim.fn.expand("<cfile>")
 				if vim.fn.filereadable(vim.fn.expand(path)) == 1 then

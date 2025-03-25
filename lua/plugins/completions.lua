@@ -12,6 +12,8 @@ return {
 	},
 	{
 		"hrsh7th/nvim-cmp",
+      event = "VeryLazy",
+
 		config = function()
 			local cmp_autopairs = require("nvim-autopairs.completion.cmp")
 			local cmp = require("cmp")
