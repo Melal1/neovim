@@ -39,7 +39,7 @@
         ├── theme.lua           # Theme configuration
         ├── tmuxnav.lua         # Tmux navigation integration
         ├── todo.lua            # Todo comment highlighting
-        ├── treejs.lua          # Treesitter-based JS enhancements (disabled)
+        ├── treejs.lua          # Join And Split ( Disabled )
         ├── treesitter.lua      # Treesitter syntax highlighting
         └── undotree.lua        # Undo history visualization
 ```
