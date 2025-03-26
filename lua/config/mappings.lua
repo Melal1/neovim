@@ -2,9 +2,11 @@
 -- Leader key is set to space
 vim.g.mapleader = " "
 vim.keymap.set("i", "jk", "<ESC>")
+-- Terminal
 vim.keymap.set("t", "<ESC>", "<C-\\><C-n>")
+vim.keymap.set("n", "<leader>la", ":terminal lazygit <CR>")
 --Search and replace
-vim.keymap.set("n", "<leader>a", [[:%s/\<<C-r><C-w>\>/<C-r><C-w>/gc<Left><Left><Left>]])
+vim.keymap.set("n", "<leader>a", [[:%s/<C-r><C-w>/<C-r><C-w>/gc<Left><Left><Left>]])
 vim.keymap.set("n", "<leader>h", ":noh<CR>")
 
 vim.keymap.set("n", "x", '"_x')
