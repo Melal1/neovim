@@ -39,6 +39,12 @@ return {
 
 				capabilities = capabilities, -- add this for consistency
 			})
+			lspconfig.cssls.setup({
+				capabilities = capabilities,
+			})
+			lspconfig.tailwindcss.setup({
+				capabilities = capabilities,
+			})
 
 			vim.keymap.set("n", "<leader>lmk", vim.lsp.buf.hover, {})
 			vim.keymap.set("n", "<C-Space>", vim.lsp.buf.hover, {})
