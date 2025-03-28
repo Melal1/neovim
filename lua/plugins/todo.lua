@@ -1,6 +1,6 @@
 return {
 	"folke/todo-comments.nvim",
-	event = { "VeryLazy", "BufRead" },
+	event = { "VeryLazy" },
 	dependencies = { "nvim-lua/plenary.nvim" },
 	opts = {
 		highlight = {

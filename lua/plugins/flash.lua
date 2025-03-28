@@ -1,9 +1,8 @@
 return {
 	"folke/flash.nvim",
-	event = "BufRead",
 	keys = {
 		{
-			"s",
+			"ss",
 			mode = { "n", "x", "o" },
 			function()
 				require("flash").jump()

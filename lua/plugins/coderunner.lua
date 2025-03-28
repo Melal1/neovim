@@ -1,7 +1,16 @@
 return {
 	-- theme = "lushwal",
 	"CRAG666/code_runner.nvim",
-	event = "VeryLazy",
+	keys = {
+		{
+			"<leader>rf",
+			"<cmd>RunFile<CR>",
+		},
+		{
+			"<leader>rc",
+			"<cmd>RunClose<CR>",
+		},
+	},
 
 	config = function()
 		require("code_runner").setup({
@@ -14,8 +23,5 @@ return {
 				},
 			},
 		})
-
-		vim.keymap.set("n", "<leader>rf", ":RunFile<CR>", { noremap = true, silent = false })
-		vim.keymap.set("n", "<leader>rc", ":RunClose<CR>", { noremap = true, silent = false })
 	end,
 }
