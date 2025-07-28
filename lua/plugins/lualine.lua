@@ -30,6 +30,7 @@ return {
 							newfile = "[New]",
 						},
 					},
+					{ "diagnostics" },
 				},
 				lualine_x = {
 					-- function()

@@ -20,13 +20,14 @@ return {
 				styles = {
 					comments = { "italic" },
 					conditionals = { "italic", "bold" },
-					loops = { "italic" },
+					loops = { "bold" },
+
 					functions = { "bold" },
 					keywords = { "bold" },
 					variables = { "bold" },
 					numbers = { "bold" },
 					booleans = { "italic" },
-					properties = { "italic" },
+					properties = { "bold" },
 					types = { "bold" },
 					operators = { "bold" },
 				},

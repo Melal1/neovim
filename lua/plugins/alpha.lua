@@ -6,11 +6,35 @@ return {
 		local dashboard = require("alpha.themes.dashboard")
 
 		-- Define custom highlight groups for header and footer
-		vim.api.nvim_set_hl(0, "MyHeaderHighlight", { fg = "#ff5555" })
-		vim.api.nvim_set_hl(0, "MyFooterHighlight", { fg = "#55ff55" }) -- Green text
+		vim.api.nvim_set_hl(0, "MyHeaderHighlight", { fg = "#CBA6F7" })
+		vim.api.nvim_set_hl(0, "MyFooterHighlight", { fg = "#789BD3" }) -- Green text
 
 		-- Define all headers in a table (each header is a table of strings)
 		local headers = {
+			-- {
+			-- 	"                                ",
+			-- 	"                                ",
+			-- 	" Field of reflectionless Black  ",
+			-- 	"                                ",
+			-- 	"                                ",
+			-- 	"                                ",
+			-- },
+      {
+   [[       /\_/-,\_ )            ]],
+   [[      .-.) _;=='_/ (.;       ]],
+   [[       \ \'  󱄅   \/= )       ]],
+   [[      -\.'-. __.'|-'         ]],
+   [[       <_`-'\'__.'/          ]],
+   [[       `'-._( \              ]],
+   [[      ___   \\\,      ___    ]],
+   [[      \ .'-. \\\   .-'_. /   ]],
+   [[       '._' '.\\\/.-'_.'     ]],
+   [[      '--``\\('--'           ]],
+   [[               \\\           ]],
+   [[               `\\\          ]],
+   [[                \\|          ]],
+
+      },
 			{
 				"                                ",
 				"                                ",
@@ -125,6 +149,8 @@ return {
 			dashboard.button("r", "  Sessions", ":SessionManager<CR>"),
 			dashboard.button("c", "  Config", ":Neotree focus $HOME/.config/nvim<CR>"),
 			dashboard.button("q", "󰅚  Quit NVIM", ":qa<CR>"),
+			dashboard.button("s", "Power menu", ":! wlogout<CR>"),
+			-- dashboard.button("f", "󰅚  Fuck off", ":! ~/fuckoff.sh<CR>"),
 		}
 
 		dashboard.config.opts.noautocmd = true

@@ -7,6 +7,21 @@ vim.keymap.set("t", "<ESC>", "<C-\\><C-n>")
 vim.keymap.set("n", "<leader>la", ":terminal lazygit <CR>")
 --Search and replace
 vim.keymap.set("n", "<leader>a", [[:%s/<C-r><C-w>/<C-r><C-w>/gc<Left><Left><Left>]])
+-- Visual mode mapping: Substitute the visually selected text
+vim.keymap.set("v", "<leader>a", "y:%s/<C-R>\"//gc<Left><Left><Left>", {
+  noremap = true,
+  silent = true,
+  desc = "Substitute visually selected region", -- A helpful description for :help map
+})
+vim.keymap.set("n","<M-j>","<cmd>cnext<CR>")
+vim.keymap.set("n","<M-k>","<cmd>cprev<CR>")
+
+-- Open nvim configs 
+
+vim.keymap.set("n","<leader>opc",":Neotree focus $HOME/.config/nvim<CR>")
+vim.keymap.set("n","<leader>ops",":Neotree focus $HOME/.config/nvim/lua/config/Snippets/<CR>")
+
+
 vim.keymap.set("n", "<leader>h", ":noh<CR>")
 
 vim.keymap.set("n", "x", '"_x')
@@ -35,7 +50,7 @@ vim.keymap.set("n", "n", "nzzzv")
 vim.keymap.set("n", "N", "Nzzzv")
 vim.keymap.set("n", "<leader>pv", vim.cmd.Ex)
 vim.keymap.set("n", "<leader>x", "<cmd>!chmod +x %<CR>", { silent = true })
-vim.keymap.set("n", "<CR>", "o<ESC>k") -- insert blank line without exiting n mode
+vim.keymap.set("n", "<CR>", "o<ESC>k")   -- insert blank line without exiting n mode
 vim.keymap.set("n", "<S-CR>", "O<ESC>j") -- same as above but up
 vim.keymap.set("x", "<D-j>", ":move '>+1<CR>gv-gv")
 vim.keymap.set("x", "<D-k>", ":move '<-2<CR>gv-gv")
@@ -47,12 +62,16 @@ vim.keymap.set("n", "<C-right>", "1<C-w>>", { noremap = true, silent = true })
 vim.keymap.set("n", "<C-left>", "1<C-w><", { noremap = true, silent = true })
 vim.keymap.set("n", "<C-c", "<C-o><", { noremap = true, silent = true })
 vim.keymap.set("n", "<leader>rlt", function()
-	vim.cmd.colorscheme(require("config.utils").apply_theme())
+  vim.cmd.colorscheme(require("config.utils").apply_theme())
 end)
 
 vim.keymap.set("n", "<leader>td", function()
-	require("config.utils").open_floating_todo() -- Call the function directly
+  require("config.utils").open_floating_todo() -- Call the function directly
 end, { noremap = true, silent = true, desc = "Open TODO in floating window" })
 vim.keymap.set("n", "<S-Tab>", "<cmd>bprev!<CR>", { silent = true })
 vim.keymap.set("n", "<Tab>", "<cmd>bnext!<CR>", { silent = true })
 vim.keymap.set("n", "<leader>bd", "<cmd>bdelete!<CR>", { silent = true })
+
+-- Temp
+
+vim.keymap.set("n", "<leader>dash", ":Alpha<CR>")
