@@ -2,6 +2,7 @@ local theme = require("config.utils").apply_theme()
 return {
 	{
 		"catppuccin/nvim",
+		-- lazy = true,
 		name = "catppuccin",
 		priority = 1000,
 		config = function()
@@ -44,56 +45,58 @@ return {
 			vim.cmd.colorscheme(theme)
 		end,
 	},
-	--   {
-	--     "folke/tokyonight.nvim",
-	--     lazy = false,
-	--     priority = 1000,
-	--     config = function()
-	--       require("tokyonight").setup({
-	--         transparent = true,
-	--       })
-	--     end,
-	--   },
-	--   {
-	--     "rebelot/kanagawa.nvim",
-	--     priority = 1000,
-	--     config = function()
-	--       require("kanagawa").setup({
-	--         compile = false,
-	--         undercurl = true, -- enable undercurls
-	--         commentStyle = { italic = true },
-	--         functionStyle = { bold = true },
-	--         keywordStyle = { bold = true },
-	--         statementStyle = { bold = true },
-	--         typeStyle = { bold = true },
-	--         transparent = true, -- do not set background color
-	--         dimInactive = true, -- dim inactive window `:h hl-NormalNC`
-	--         terminalColors = true, -- define vim.g.terminal_color_{0,17}
-	--       })
-	--     end,
-	--   },
-	--
-	--   {
-	--     "EdenEast/nightfox.nvim",
-	--     priority = 1000,
-	--     config = function()
-	--       require("nightfox").setup({
-	--         options = {
-	--           transparent = true,
-	--           styles = {       -- Style to be applied to different syntax groups
-	--             comments = "italic", -- Value is any valid attr-list value `:help attr-list`
-	--             conditionals = "bold",
-	--             constants = "bold",
-	--             functions = "bold",
-	--             keywords = "NONE",
-	--             numbers = "NONE",
-	--             operators = "NONE",
-	--             strings = "NONE",
-	--             types = "italic, bold",
-	--             variables = "bold",
-	--           },
-	--         },
-	--       })
-	--     end,
-	--   },
+	{
+		"folke/tokyonight.nvim",
+		lazy = true,
+		priority = 1000,
+		config = function()
+			require("tokyonight").setup({
+				transparent = true,
+			})
+		end,
+	},
+	{
+		"rebelot/kanagawa.nvim",
+		lazy = true,
+		priority = 1000,
+		config = function()
+			require("kanagawa").setup({
+				compile = false,
+				undercurl = true, -- enable undercurls
+				commentStyle = { italic = true },
+				functionStyle = { bold = true },
+				keywordStyle = { bold = true },
+				statementStyle = { bold = true },
+				typeStyle = { bold = true },
+				transparent = true, -- do not set background color
+				dimInactive = true, -- dim inactive window `:h hl-NormalNC`
+				terminalColors = true, -- define vim.g.terminal_color_{0,17}
+			})
+		end,
+	},
+
+	{
+		"EdenEast/nightfox.nvim",
+		lazy = true,
+		priority = 1000,
+		config = function()
+			require("nightfox").setup({
+				options = {
+					transparent = true,
+					styles = { -- Style to be applied to different syntax groups
+						comments = "italic", -- Value is any valid attr-list value `:help attr-list`
+						conditionals = "bold",
+						constants = "bold",
+						functions = "bold",
+						keywords = "NONE",
+						numbers = "NONE",
+						operators = "NONE",
+						strings = "NONE",
+						types = "italic, bold",
+						variables = "bold",
+					},
+				},
+			})
+		end,
+	},
 }

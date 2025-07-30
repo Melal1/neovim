@@ -1,1 +1,1 @@
-require("config.Snippets.simple")
+-- require("config.Snippets.simple")

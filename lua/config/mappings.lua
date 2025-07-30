@@ -4,7 +4,7 @@ vim.g.mapleader = " "
 vim.keymap.set("i", "jk", "<ESC>")
 -- Terminal
 vim.keymap.set("t", "<ESC>", "<C-\\><C-n>")
-vim.keymap.set("n", "<leader>la", ":terminal lazygit <CR>")
+-- vim.keymap.set("n", "<leader>la", ":terminal lazygit <CR>")
 --Search and replace
 vim.keymap.set("n", "<leader>a", [[:%s/<C-r><C-w>/<C-r><C-w>/gc<Left><Left><Left>]])
 -- Visual mode mapping: Substitute the visually selected text
@@ -65,13 +65,12 @@ vim.keymap.set("n", "<leader>rlt", function()
   vim.cmd.colorscheme(require("config.utils").apply_theme())
 end)
 
-vim.keymap.set("n", "<leader>td", function()
-  require("config.utils").open_floating_todo() -- Call the function directly
-end, { noremap = true, silent = true, desc = "Open TODO in floating window" })
+-- vim.keymap.set("n", "<leader>td", function()
+--   require("config.utils").open_floating_todo() -- Call the function directly
+-- end, { noremap = true, silent = true, desc = "Open TODO in floating window" })
+--
 vim.keymap.set("n", "<S-Tab>", "<cmd>bprev!<CR>", { silent = true })
 vim.keymap.set("n", "<Tab>", "<cmd>bnext!<CR>", { silent = true })
 vim.keymap.set("n", "<leader>bd", "<cmd>bdelete!<CR>", { silent = true })
-
--- Temp
 
 vim.keymap.set("n", "<leader>dash", ":Alpha<CR>")

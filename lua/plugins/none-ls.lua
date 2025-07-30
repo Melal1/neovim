@@ -4,7 +4,7 @@ return {
     "nvimtools/none-ls-extras.nvim",
     "gbprod/none-ls-shellcheck.nvim", -- shellcheck
   },
-  event = "VeryLazy",
+  event = { 'BufReadPre', 'BufNewFile' },
 
   config = function()
     local none_ls = require("null-ls")

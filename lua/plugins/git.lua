@@ -1,6 +1,9 @@
 return {
 	"lewis6991/gitsigns.nvim",
-	event = "BufRead",
+	-- event = "BufRead",
+	-- event = "InsertEnter",
+  keys = {"<leader>lgt"},
+  
 	config = function()
 		require("gitsigns").setup({
 			signs = {

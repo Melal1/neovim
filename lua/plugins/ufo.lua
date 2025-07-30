@@ -4,16 +4,19 @@ return {
 	dependencies = { "kevinhwang91/promise-async" },
 	event = "BufReadPost",
 	config = function()
-		vim.o.foldcolumn = "1"
+		-- vim.o.foldcolumn = "1"
 		vim.o.foldenable = true
 		vim.o.foldlevel = 99
 		vim.o.foldlevelstart = 99
 		require("ufo").setup({
-			open_fold_hl_timeout = 0,
-			close_fold_kinds_for_ft = {},
-			enable_get_fold_virt_text = false,
-			fold_virt_text_handler = nil,
+			-- open_fold_hl_timeout = 0,
+			-- close_fold_kinds_for_ft = {},
+			-- enable_get_fold_virt_text = false,
+			-- fold_virt_text_handler = nil,
 			provider_selector = function(bufnr, filetype, buftype)
+        if buftype ~= '' or filetype == 'neo-tree' then
+      return ''  -- Disable UFO for special/non-file buffers_color
+        end
 				return { "lsp", "indent" }
 			end,
 		})
