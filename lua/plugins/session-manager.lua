@@ -1,5 +1,6 @@
 return {
 	"Shatur/neovim-session-manager",
+  enabled = false ,
 	cmd = { -- Load only when these commands are called
 		"SessionManager",
 		"SessionManager load_last_session",

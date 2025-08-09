@@ -1,6 +1,9 @@
 return {
 	"goolord/alpha-nvim",
 	dependencies = { "nvim-tree/nvim-web-devicons" },
+  keys = {
+    {"<leader>dash", ":Alpha<CR>"},
+  },
 	config = function()
 		local alpha = require("alpha")
 		local dashboard = require("alpha.themes.dashboard")
@@ -145,8 +148,8 @@ return {
 
 		-- Set dashboard buttons
 		dashboard.section.buttons.val = {
-			dashboard.button("e", "  Last Session", ":SessionManager load_last_session<CR>"),
-			dashboard.button("r", "  Sessions", ":SessionManager<CR>"),
+			-- dashboard.button("e", "  Last Session", ":SessionManager load_last_session<CR>"),
+			-- dashboard.button("r", "  Sessions", ":SessionManager<CR>"),
 			dashboard.button("c", "  Config", ":Neotree focus $HOME/.config/nvim<CR>"),
 			dashboard.button("q", "󰅚  Quit NVIM", ":qa<CR>"),
 			dashboard.button("s", "Power menu", ":! wlogout<CR>"),

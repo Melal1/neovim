@@ -2,6 +2,7 @@ return {
   {
     "stevearc/oil.nvim",
     dependencies = { "nvim-tree/nvim-web-devicons" },
+    lazy = false ,
     keys = { { "-", "<cmd>Oil --float<CR>" } },
 
     config = function()

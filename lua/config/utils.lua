@@ -134,4 +134,46 @@ function M.open_floating_todo()
 	})
 end
 
+local toggles = {
+  ["1"] = "0",
+  ["0"] = "1",
+	["true"] = "false",
+	["false"] = "true",
+	["on"] = "off",
+	["off"] = "on",
+	["yes"] = "no",
+	["no"] = "yes",
+	["enable"] = "disable",
+	["disable"] = "enable",
+	["enabled"] = "disabled",
+	["disabled"] = "enabled",
+}
+
+local variants = {
+	["true"] = "1",
+	["1"] = "true",
+	["false"] = "0",
+	["0"] = "false",
+	["yes"] = "1",
+	["no"] = "0",
+	["enable"] = "1",
+	["disable"] = "0",
+}
+
+function M.toggleBool(mode)
+	local word = vim.fn.expand("<cword>")
+	local replacement
+	if mode then
+		replacement = toggles[word]
+	else
+		replacement = variants[word]
+	end
+
+	if replacement then
+		vim.cmd("normal! ciw" .. replacement)
+	else
+		print("No toggle or variant available for '" .. word .. "' :) ")
+	end
+end
+
 return M

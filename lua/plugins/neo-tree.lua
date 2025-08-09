@@ -1,5 +1,8 @@
 return {
 	"nvim-neo-tree/neo-tree.nvim",
+	keys = {
+		{ "<C-n>", "<cmd>Neotree float toggle<CR>" },
+	},
 	branch = "v3.x",
 	dependencies = {
 		"nvim-lua/plenary.nvim",
@@ -32,7 +35,5 @@ return {
 
 	config = function(_, opts)
 		require("neo-tree").setup(opts)
-		vim.keymap.set("n", "<C-n>", ":Neotree filesystem toggle left<CR>")
-		vim.keymap.set("n", "<leader>n", ":Neotree toggle buffers<CR>")
 	end,
 }
