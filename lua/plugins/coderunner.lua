@@ -1,50 +1,63 @@
+local choice = ""
+
 return {
 	"CRAG666/code_runner.nvim",
 	keys = {
 		{
+			"<leader>rF",
+			function()
+				local filetype = vim.bo.filetype
+				if filetype ~= "cpp" then
+					vim.cmd("write")
+					vim.cmd("RunFile")
+					return
+				end
+
+				local options = {
+					"Empty",
+					"-lncurses",
+				}
+				vim.ui.select(options, { prompt = "Compile with ?" }, function(selected)
+					if not selected or selected == "Empty" then
+						choice = ""
+					else
+						choice = selected
+					end
+					vim.cmd("write")
+					vim.cmd("RunFile")
+				end)
+			end,
+		},
+		{
 			"<leader>rf",
-			"<cmd>w | RunFile<CR>",
+			"<cmd>RunFile<CR>",
 		},
 		{
 			"<leader>rc",
 			"<cmd>RunClose<CR>",
 		},
-		{
-			"<leader>rt",
-			"<cmd>w | RunFile tab<CR>",
-		},
 	},
 
 	config = function()
-    require("telescope")
+		require("telescope")
 		require("code_runner").setup({
-            startinsert = true,
+			startinsert = true,
 			filetype = {
-				cpp = function(...)
-					local options = {
-            "Empty",
-            "-lncurses"
+				cpp = function()
+					local cpp_base = {
+						"cd $dir &&",
+						"g++ $fileName -o",
+						"/tmp/$fileNameWithoutExt",
+						choice,
 					}
 
-					vim.ui.select(options, { prompt = "Compile with ?" }, function(choice)
-						if not choice or choice == "Empty" then
-							choice = ""
-						end
+					local cpp_exec = {
+						"&& /tmp/$fileNameWithoutExt &&",
+						"rm /tmp/$fileNameWithoutExt",
+					}
 
-						local cpp_base = {
-							"cd $dir &&",
-							"g++ $fileName -o",
-							"/tmp/$fileNameWithoutExt",
-							choice,
-						}
 
-						local cpp_exec = {
-							"&& /tmp/$fileNameWithoutExt &&",
-							"rm /tmp/$fileNameWithoutExt",
-						}
-
-						require("code_runner.commands").run_from_fn(vim.list_extend(cpp_base, cpp_exec))
-					end)
+					return vim.list_extend(cpp_base, cpp_exec)
 				end,
 			},
 		})
