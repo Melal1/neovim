@@ -103,6 +103,7 @@ function M.open_floating_todo()
 	end
 
 	local buf = vim.fn.bufnr(todo_path, true)
+
 	if buf == -1 then
 		buf = vim.api.nvim_create_buf(false, false)
 		vim.api.nvim_buf_set_name(buf, todo_path)
@@ -135,8 +136,8 @@ function M.open_floating_todo()
 end
 
 local toggles = {
-  ["1"] = "0",
-  ["0"] = "1",
+	["1"] = "0",
+	["0"] = "1",
 	["true"] = "false",
 	["false"] = "true",
 	["on"] = "off",
@@ -147,6 +148,14 @@ local toggles = {
 	["disable"] = "enable",
 	["enabled"] = "disabled",
 	["disabled"] = "enabled",
+	["&&"] = "||",
+	["||"] = "&&",
+	[">>"] = "<<",
+	["<<"] = ">>",
+	["++"] = "--",
+	["--"] = "++",
+	["=="] = "!=",
+	["!="] = "==",
 }
 
 local variants = {
@@ -160,13 +169,21 @@ local variants = {
 	["disable"] = "0",
 }
 
-function M.toggleBool(mode)
-	local word = vim.fn.expand("<cword>")
-	local replacement
+local function lookup(word, mode)
+	word = word:lower()
 	if mode then
-		replacement = toggles[word]
+		return toggles[word]
 	else
-		replacement = variants[word]
+		return variants[word]
+	end
+end
+
+function M.toggleBool(mode)
+	local word = vim.fn.expand("<cWORD>")
+	local replacement = lookup(word, mode)
+	if not replacement then
+		word = vim.fn.expand("<cword>")
+		replacement = lookup(word, mode)
 	end
 
 	if replacement then
@@ -175,5 +192,46 @@ function M.toggleBool(mode)
 		print("No toggle or variant available for '" .. word .. "' :) ")
 	end
 end
+
+function M.compileAndDebug()
+  local filePath = vim.fn.expand("%:p")
+  local noExt = vim.fn.fnamemodify(filePath, ":r")
+  local ft = vim.fn.expand("%:e")
+
+  local ftAct = {
+    cpp = function()
+      local compile_output = vim.fn.system("g++ " .. filePath .. " -o " .. noExt .. " -g")
+      if vim.v.shell_error ~= 0 then
+        print("Compilation failed:\n" .. compile_output)
+        return false
+      end
+      return true
+    end,
+  }
+
+  local db = {
+    cpp = function()
+      if os.getenv("TMUX") then
+        local cmd = "gdbserver --no-startup-with-shell :1234 " .. noExt 
+        vim.fn.system("tmux split-window -h -l 30 " .. cmd)
+      else
+        print("To have a console make sure you are on tmux")
+      end
+    end,
+  }
+
+  if ftAct[ft] then
+    local compiled = ftAct[ft]()
+    if compiled then
+      db[ft]()
+    end
+  else
+    print("File type '" .. ft .. "' is not supported")
+    return
+  end
+
+  return noExt
+end
+
 
 return M
