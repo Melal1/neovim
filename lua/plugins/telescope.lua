@@ -1,4 +1,3 @@
-local builtin = require("telescope.builtin")
 return {
   {
     "nvim-telescope/telescope.nvim",
@@ -17,7 +16,7 @@ return {
         "<leader>fSt",
         function()
           local word = vim.fn.expand("<cWORD>")
-          builtin.grep_string({ search = word })
+          require("telescope.builtin").grep_string({ search = word })
         end,
         desc = "Grep WORD under cursor (includes punctuation)",
       },
@@ -25,28 +24,28 @@ return {
         "<leader>fst",
         function()
           local word = vim.fn.expand("<cword>")
-          builtin.grep_string({ search = word })
+          require("telescope.builtin").grep_string({ search = word })
         end,
         desc = "Grep word under cursor (stops at punctuation)",
       },
       {
         "<leader>fo",
         function()
-          builtin.oldfiles()
+          require("telescope.builtin").oldfiles()
         end,
       },
       -- LSP
       {
         "<leader>fsy",
         function()
-          builtin.lsp_document_symbols()
+          require("telescope.builtin").lsp_document_symbols()
         end,
       },
 
       {
         "<leader>fdia",
         function()
-          builtin.diagnostics()
+          require("telescope.builtin").diagnostics()
         end,
       },
 
