@@ -1,30 +1,31 @@
--- This file contains all the key mappings for the editor only , plugins mappings are in their respective files
--- Leader key is set to space
 local map = vim.keymap.set
 vim.g.mapleader = " "
-map("i", "jk", "<ESC>")
--- Terminal
-map("t", "<ESC>", "<C-\\><C-n>")
--- map("n", "<leader>la", ":terminal lazygit <CR>")
---Search and replace
-map("n", "<leader>a", [[:%s/<C-r><C-w>/<C-r><C-w>/gc<Left><Left><Left>]])
--- Visual mode mapping: Substitute the visually selected text
+
+map("i", "jk", "<ESC>", { desc = "Exit insert mode quickly" })
+
+-- Terminal mode
+map("t", "<ESC>", "<C-\\><C-n>", { desc = "Exit terminal mode" })
+
+-- Search and replace
+map("n", "<leader>a", [[:%s/<C-r><C-w>/<C-r><C-w>/gc<Left><Left><Left>]], {
+  desc = "Search and replace word under cursor with confirmation",
+})
 map("v", "<leader>a", 'y:%s/<C-R>"//gc<Left><Left><Left>', {
   noremap = true,
   silent = true,
-  desc = "Substitute visually selected region", -- A helpful description for :help map
+  desc = "Substitute visually selected region",
 })
-map("n", "<M-j>", "<cmd>cnext<CR>")
-map("n", "<M-k>", "<cmd>cprev<CR>")
+map("n", "<leader>cw", [[:%s/\<<C-r><C-w>\>/<C-r><C-w>/gI<Left><Left><Left>]], { desc = "Change all occurrences of word" })
 
--- Open nvim configs
 
--- map("n", "<leader>opc", ":Neotree focus $HOME/.config/nvim<CR>")
--- map("n", "<leader>ops", ":Neotree focus $HOME/.config/nvim/lua/config/Snippets/<CR>")
+-- Quickfix navigation
+map("n", "<M-j>", "<cmd>cnext<CR>", { desc = "Go to next quickfix item" })
+map("n", "<M-k>", "<cmd>cprev<CR>", { desc = "Go to previous quickfix item" })
+
+-- Open nvim configs in tmux window or new tab
 map("n", "<leader>opc", function()
   local path = "~/.config/nvim/"
   local expanded_path = vim.fn.expand(path)
-
   if os.getenv("TMUX") then
     vim.fn.system(
       "tmux new-window -n 'NeoVim configuration' 'z " .. expanded_path .. " && nvim .'"
@@ -32,12 +33,11 @@ map("n", "<leader>opc", function()
   else
     vim.cmd("tabnew " .. expanded_path)
   end
-end, { desc = "Open nvim in tmux window or new tab" })
+end, { desc = "Open Neovim config directory" })
 
 map("n", "<leader>ops", function()
   local path = "~/.config/nvim/lua/config/Snippets/"
   local expanded_path = vim.fn.expand(path)
-
   if os.getenv("TMUX") then
     vim.fn.system(
       "tmux new-window -n 'Snippets' 'z " .. expanded_path .. " && nvim .'"
@@ -45,57 +45,69 @@ map("n", "<leader>ops", function()
   else
     vim.cmd("tabnew " .. expanded_path)
   end
-end, { desc = "Open nvim in tmux window or new tab" })
+end, { desc = "Open snippets config directory" })
 
+map("n", "<leader>h", ":noh<CR>", { desc = "Clear search highlight" })
 
-map("n", "<leader>h", ":noh<CR>")
+-- Delete without yanking
+map("n", "x", '"_x', { desc = "Delete character without yanking" })
+map("n", "dd", '"_dd', { desc = "Delete line without yanking" })
+map("v", "d", '"_d', { desc = "Delete selection without yanking" })
+vim.api.nvim_set_keymap('n', 'c', '"_c', { noremap = true, silent = true, desc = "Change without yanking" })
+vim.api.nvim_set_keymap('n', 'C', '"_C', { noremap = true, silent = true, desc = "Change to end of line without yanking" })
 
-map("n", "x", '"_x')
-map("n", "dd", '"_dd')
-map("v", "d", '"_d')
-vim.api.nvim_set_keymap('n', 'c', '"_c', { noremap = true, silent = true })
-vim.api.nvim_set_keymap('n', 'C', '"_C', { noremap = true, silent = true })
+-- Paste without overwriting default register in visual mode
+map("x", "<leader>p", [["_dP]], { desc = "Paste without overwriting default register" })
 
+-- Clipboard mappings
+map({ "n", "v" }, "<leader>y", [["+y]], { desc = "Yank to system clipboard" })
+map("n", "<leader>Y", [["+Y]], { desc = "Yank line to system clipboard" })
 
-map("x", "<leader>p", [["_dP]])
-map({ "n", "v" }, "<leader>y", [["+y]])
-map("n", "<leader>Y", [["+Y]])
-map({ "n", "v" }, "<leader>d", "d")
+-- Leader + d deletes normally
+map({ "n", "v" }, "<leader>d", "d", { desc = "Delete selection normally" })
 
-map("n", "<leader>cd", "<cmd>:lcd %:p:h<CR>")
-map("n", "<C-d>", "<C-d>zz")
-map("n", "<C-u>", "<C-u>zz")
-map("n", "n", "nzzzv")
-map("n", "N", "Nzzzv")
-map("n", "<leader>pv", vim.cmd.Ex)
-map("n", "<leader>x", "<cmd>!chmod +x %<CR>", { silent = true })
-map("n", "<CR>", "o<ESC>k")   -- insert blank line without exiting n mode
-map("n", "<S-CR>", "O<ESC>j") -- same as above but up
-map("x", "<D-j>", ":move '>+1<CR>gv-gv")
-map("x", "<D-k>", ":move '<-2<CR>gv-gv")
+-- Change working directory to current file's directory
+map("n", "<leader>cd", "<cmd>:lcd %:p:h<CR>", { desc = "Set local working directory to current file" })
 
--- Windows resizing
-map("n", "<C-up>", "1<C-w>+", { noremap = false, silent = true })
-map("n", "<C-down>", "1<C-w>-", { noremap = true, silent = true })
-map("n", "<C-right>", "1<C-w>>", { noremap = true, silent = true })
-map("n", "<C-left>", "1<C-w><", { noremap = true, silent = true })
-map("n", "<C-c", "<C-o><", { noremap = true, silent = true })
+-- Center screen after scrolling/search
+map("n", "<C-d>", "<C-d>zz", { desc = "Scroll half page down and center" })
+map("n", "<C-u>", "<C-u>zz", { desc = "Scroll half page up and center" })
+map("n", "n", "nzzzv", { desc = "Next search result and center" })
+map("n", "N", "Nzzzv", { desc = "Previous search result and center" })
+
+map("n", "<leader>pv", vim.cmd.Ex, { desc = "Open file explorer" })
+
+map("n", "<leader>x", "<cmd>!chmod +x %<CR>", { silent = true, desc = "Make current file executable" })
+
+-- Insert blank line below/above without leaving normal mode
+map("n", "<CR>", "o<ESC>k", { desc = "Insert blank line below without leaving normal mode" })
+map("n", "<S-CR>", "O<ESC>j", { desc = "Insert blank line above without leaving normal mode" })
+
+-- Move selected lines up/down in visual mode (macOS style bindings)
+map("x", "<D-j>", ":move '>+1<CR>gv-gv", { desc = "Move selected lines down" })
+map("x", "<D-k>", ":move '<-2<CR>gv-gv", { desc = "Move selected lines up" })
+
+-- Window resizing
+map("n", "<C-up>", "1<C-w>+", { silent = true, desc = "Increase window height" })
+map("n", "<C-down>", "1<C-w>-", { silent = true, desc = "Decrease window height" })
+map("n", "<C-right>", "1<C-w>>", { silent = true, desc = "Increase window width" })
+map("n", "<C-left>", "1<C-w><", { silent = true, desc = "Decrease window width" })
+
+map("n", "<C-c", "<C-o><", { noremap = true, silent = true, desc = "Unmapped placeholder key" })
+
 map("n", "<leader>rlt", function()
   vim.cmd.colorscheme(require("config.utils").apply_theme())
-end)
-map("n","+",function ()
+end, { desc = "Reload colorscheme" })
+
+map("n", "+", function()
   require("config.utils").toggleBool(true)
-end)
-map("n","<leader>+",function ()
+end, { desc = "Toggle bool" })
+
+map("n", "<leader>+", function()
   require("config.utils").toggleBool(false)
-end)
+end, { desc = "Toggle vari" })
 
--- map("n", "<leader>td", function()
---   require("config.utils").open_floating_todo() -- Call the function directly
--- end, { noremap = true, silent = true, desc = "Open TODO in floating window" })
---
-map("n", "<S-Tab>", "<cmd>bprev!<CR>", { silent = true })
-map("n", "<Tab>", "<cmd>bnext!<CR>", { silent = true })
-map("n", "<leader>bd", "<cmd>bdelete!<CR>", { silent = true })
+map("n", "<S-Tab>", "<cmd>bprev!<CR>", { silent = true, desc = "Previous buffer" })
+map("n", "<Tab>", "<cmd>bnext!<CR>", { silent = true, desc = "Next buffer" })
+map("n", "<leader>bd", "<cmd>bdelete!<CR>", { silent = true, desc = "Delete buffer" })
 
--- map("n", "<leader>dash", ":Alpha<CR>")
