@@ -1,7 +1,33 @@
 return {
 	{
 		"mfussenegger/nvim-dap",
-		dependencies = {},
+		dependencies = {
+			{
+				"igorlfs/nvim-dap-view",
+				---@module 'dap-view'
+				---@type dapview.Config
+				keys = {
+					{
+						"<leader>dc",
+						"<cmd>DapViewToggle<CR>",
+						desc = "Start Ui",
+					},
+				},
+				opts = {
+					winbar = {
+						sections = { "watches", "scopes", "exceptions", "breakpoints", "threads", "repl", "console" },
+						default_section = "scopes",
+						controls = {
+							enabled = true,
+							position = "right",
+						},
+					},
+				},
+			},
+			{
+				"theHamsta/nvim-dap-virtual-text",
+			},
+		},
 		keys = {
 			{
 				"[f",
@@ -83,6 +109,10 @@ return {
 		},
 		config = function()
 			local dap = require("dap")
+			vim.keymap.set("n", "<leader>daw","<cmd>DapViewWatch<CR>", { desc = "Add under cursor to watch list" })
+			require("nvim-dap-virtual-text").setup({
+				only_first_definition = false,
+			})
 			-- local debuggerPath = os.getenv("CODELLDB_PATH")
 			local debuggerPath =
 				"/nix/store/5hhaywzrjxzbsv0wcy83pcs5c66ilb4z-vscode-extension-ms-vscode-cpptools-1.22.2/share/vscode/extensions/ms-vscode.cpptools/debugAdapters/bin/OpenDebugAD7"
@@ -121,27 +151,5 @@ return {
 				},
 			}
 		end,
-	},
-	{
-		"igorlfs/nvim-dap-view",
-		---@module 'dap-view'
-		---@type dapview.Config
-		keys = {
-			{
-				"<leader>dc",
-				"<cmd>DapViewToggle<CR>",
-				desc = "Start Ui",
-			},
-		},
-		opts = {
-			winbar = {
-				sections = { "watches", "scopes", "exceptions", "breakpoints", "threads", "repl", "console" },
-				default_section = "scopes",
-				controls = {
-					enabled = true,
-					position = "right",
-				},
-			},
-		},
 	},
 }

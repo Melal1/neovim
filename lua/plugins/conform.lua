@@ -4,7 +4,7 @@ return {
 		{
 			"<leader>frm",
 			function()
-				require("conform").format()
+				require("conform").format({ lsp_format = "fallback" })
 			end,
 			desc = "Trigger formating",
 		},
@@ -27,9 +27,7 @@ return {
             UseTab: Never, \
             ColumnLimit: 0, \
             BreakBeforeBraces: Allman, \
-            AllowShortIfStatementsOnASingleLine: false, \
-            AllowShortFunctionsOnASingleLine: None, \
-            SpaceBeforeParens: ControlStatements}",
+            AllowShortFunctionsOnASingleLine: None}",
 					},
 				},
 			},

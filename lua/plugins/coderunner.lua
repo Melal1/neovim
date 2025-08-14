@@ -44,10 +44,18 @@ return {
 			startinsert = true,
 			filetype = {
 				cpp = function()
+					local include = require("config.utils").find_include_dir(4)
+					local include_flag = ""
+					if include then
+						include_flag = "-I" .. include
+            vim.notify(include_flag)
+					end
+
 					local cpp_base = {
 						"cd $dir &&",
 						"g++ $fileName -o",
 						"/tmp/$fileNameWithoutExt",
+						include_flag,
 						choice,
 					}
 
@@ -55,7 +63,6 @@ return {
 						"&& /tmp/$fileNameWithoutExt &&",
 						"rm /tmp/$fileNameWithoutExt",
 					}
-
 
 					return vim.list_extend(cpp_base, cpp_exec)
 				end,
