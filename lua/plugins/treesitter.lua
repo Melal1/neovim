@@ -1,13 +1,11 @@
 return {
 
-  "nvim-treesitter/nvim-treesitter",
-  event = { "BufRead" , "BufNewFile"},
-  build = ":TSUpdate",
-  config = function()
-    require("nvim-treesitter.configs").setup({
-      ensure_installed = { "cpp", "lua", "bash", "javascript", "typescript" },
-      highlight = { enable = true },
-      indent = { enable = true },
-    })
+	"nvim-treesitter/nvim-treesitter", 
+	branch = "main",
+	event = { "BufRead", "BufNewFile" },
+	-- dependencies = { "nvim-treesitter/nvim-treesitter-textobjects" }, --TODO: 
+	build = ":TSUpdate",
+	config = function()
+		require("nvim-treesitter").install({"cpp","bash","lua","rust"})
   end,
 }
