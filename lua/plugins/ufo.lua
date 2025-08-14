@@ -1,6 +1,5 @@
 return {
 	"kevinhwang91/nvim-ufo",
-
 	dependencies = { "kevinhwang91/promise-async" },
 	event = "BufReadPost",
 	config = function()
@@ -14,9 +13,9 @@ return {
 			-- enable_get_fold_virt_text = false,
 			-- fold_virt_text_handler = nil,
 			provider_selector = function(bufnr, filetype, buftype)
-        if buftype ~= '' or filetype == 'neo-tree' then
-      return ''  -- Disable UFO for special/non-file buffers_color
-        end
+				if buftype ~= "" or filetype == "neo-tree" then
+					return "" -- Disable UFO for special/non-file buffers_color
+				end
 				return { "lsp", "indent" }
 			end,
 		})
