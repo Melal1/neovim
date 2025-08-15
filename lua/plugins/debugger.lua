@@ -145,7 +145,7 @@ return {
 					miDebuggerPath = "/run/current-system/sw/bin/gdb",
 					cwd = "${workspaceFolder}",
 					program = function()
-						local msg = require("config.utils").compileAndDebug()
+						local msg = require("config.utils.cpp").compileAndDebug()
 						return msg
 					end,
 				},

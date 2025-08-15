@@ -43,7 +43,7 @@ return {
 			startinsert = true,
 			filetype = {
 				cpp = function()
-					local include = require("config.utils").find_include_dir(4)
+					local include = require("config.utils.cpp").find_include_dir(4)
 					local include_flag = ""
 					if include then
 						include_flag = "-I" .. include

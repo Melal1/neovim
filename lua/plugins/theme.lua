@@ -1,4 +1,4 @@
-local theme = require("config.utils").apply_theme()
+local theme = require("config.utils.theme").apply_theme()
 return {
 	{
 		"catppuccin/nvim",
