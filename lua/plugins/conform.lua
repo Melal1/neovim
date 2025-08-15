@@ -25,7 +25,7 @@ return {
 						"--style={BasedOnStyle: LLVM, \
             IndentWidth: 2, \
             UseTab: Never, \
-            ColumnLimit: 0, \
+            ColumnLimit: 9999,\
             BreakBeforeBraces: Allman, \
             AllowShortFunctionsOnASingleLine: None}",
 					},
