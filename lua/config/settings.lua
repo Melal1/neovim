@@ -45,9 +45,10 @@ vim.opt.termguicolors = true -- true color support
 vim.opt.wrap = false
 vim.opt.hlsearch = false
 vim.opt.incsearch = true
-vim.api.nvim_set_hl(0, "LineNr", { fg = "#4e4e4e", bold = false }) -- Normal line numbers
+-- vim.api.nvim_set_hl(0, "LineNr", { fg = "#4e4e4e", bold = false }) -- Normal line numbers
 
 -- ========================================
 -- Other
 -- ========================================
+vim.cmd(":hi statusline guibg=NONE")
 vim.loader.enable() -- faster lua module loading

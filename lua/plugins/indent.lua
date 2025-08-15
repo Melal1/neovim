@@ -4,9 +4,10 @@ return {
 	main = "ibl",
 	---@module "ibl"
 	---@type ibl.config
-	opts = {},
 
 	config = function()
+		vim.cmd([[highlight IblIndent guifg=#252530 gui=nocombine]])
+		vim.cmd([[highlight IblScope guifg=#c9b1ca gui=nocombine]])
 		require("ibl").setup({})
 	end,
 }
