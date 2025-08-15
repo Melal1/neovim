@@ -1,5 +1,4 @@
 local choice = ""
-
 return {
 	"CRAG666/code_runner.nvim",
 	keys = {
@@ -48,7 +47,7 @@ return {
 					local include_flag = ""
 					if include then
 						include_flag = "-I" .. include
-            vim.notify(include_flag)
+						vim.notify(include_flag)
 					end
 
 					local cpp_base = {

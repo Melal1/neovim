@@ -4,7 +4,7 @@ vim.g.mapleader = " "
 map("n","<C-q>","<cmd>wqa!<CR>")
 map("n","<leader><C-q>","<cmd>qa!<CR>")
 
-map("i", "jk", "<ESC>", { desc = "Exit insert mode quickly" })
+-- map("i", "jk", "<ESC>", { desc = "Exit insert mode quickly" }) -- I am lefting this for caps lock :(
 
 -- Terminal mode
 map("t", "<ESC>", "<C-\\><C-n>", { desc = "Exit terminal mode" })
