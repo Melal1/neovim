@@ -1,5 +1,4 @@
 local map = vim.keymap.set
-vim.g.mapleader = " "
 
 map("n","<C-q>","<cmd>wqa!<CR>")
 map("n","<leader><C-q>","<cmd>qa!<CR>")
@@ -41,7 +40,6 @@ map("n", "<leader>Opc", function()
   end
 end, { desc = "Open Neovim config directory on new tmux window or tab" })
 
-map("n","<leader>opc","<cmd>e ~/.config/nvim/<CR>",{ desc = "Open Neovim config directory on new tmux window or tab" })
 
 map("n", "<leader>ops", function()
   local path = "~/.config/nvim/lua/config/Snippets/"

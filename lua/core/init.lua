@@ -1,4 +1,4 @@
-require("core.mappings")
 require("core.lazy")
-require("core.settings")
+require("core.keymaps")
+require("core.set")
 require("core.lsp")

@@ -12,6 +12,16 @@ return {
 			end
 		end, { desc = "Toggle mini files" })
 
+		-- Keymap to open mini.files in the current file's directory
+		vim.keymap.set("n", "<leader>e", function()
+			local file = vim.api.nvim_buf_get_name(0) -- full path of current file
+			if file == "" then
+				MiniFiles.open(vim.loop.cwd()) -- fallback to cwd if no file open
+			else
+				MiniFiles.open(vim.fs.dirname(file)) -- open in file's directory
+			end
+		end, { desc = "Open MiniFiles in current file dir" })
+
 		vim.api.nvim_create_autocmd("User", {
 			pattern = "MiniFilesBufferCreate",
 			callback = function(args)
@@ -49,7 +59,7 @@ return {
 				end, { buffer = buf_id })
 				vim.keymap.set("n", "<Tab>", function()
 					MiniFiles.close()
-				end,{buffer = buf_id})
+				end, { buffer = buf_id })
 			end,
 		})
 	end,

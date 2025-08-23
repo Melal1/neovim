@@ -4,8 +4,15 @@ return {
 		tag = "0.1.8",
 		-- Remove event, use cmd or keys to lazy-load
 		cmd = "Telescope",
-    -- Looks messy btw , but this is a simple solution
+		-- Looks messy btw , but this is a simple solution
 		keys = {
+			{
+				"<leader>opc",
+				function()
+					require("telescope.builtin").find_files({ cwd = require("lazy.core.config").options.root })
+				end,
+				desc = "Find Plugin File",
+			},
 			{
 				"<leader>frg",
 				function()
@@ -92,6 +99,7 @@ return {
 
 		dependencies = {
 			"nvim-lua/plenary.nvim",
+			"jmacadie/telescope-hierarchy.nvim",
 			{
 				"nvim-telescope/telescope-fzf-native.nvim",
 				build = "cmake -S. -Bbuild -DCMAKE_BUILD_TYPE=Release && cmake --build build --config Release",
@@ -104,9 +112,9 @@ return {
 			local actions = require("telescope.actions")
 			telescope.setup({
 				defaults = {
-          preview = {
-            treesitter = false,
-          },
+					preview = {
+						treesitter = false,
+					},
 					mappings = {
 						i = {
 							["<esc>"] = actions.close,
@@ -116,9 +124,9 @@ return {
 						"filename_first",
 					},
 					previewer = false,
-					prompt_prefix = "    ",
+					prompt_prefix = "    ",
 					selection_caret = " ",
-					file_ignore_patterns = { "node_modules", "package-lock.json" },
+					file_ignore_patterns = { "node_modules", "package-lock.json", "lazy-lock.json" },
 					initial_mode = "insert",
 					select_strategy = "reset",
 					sorting_strategy = "ascending",
@@ -194,6 +202,7 @@ return {
 			telescope.load_extension("ui-select")
 			telescope.load_extension("projects")
 			telescope.load_extension("fzf")
+			telescope.load_extension("hierarchy")
 		end,
 	},
 }

@@ -1,3 +1,4 @@
+vim.g.mapleader = " "
 -- Lazy.nvim
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
 if not (vim.uv or vim.loop).fs_stat(lazypath) then
@@ -15,14 +16,20 @@ if not (vim.uv or vim.loop).fs_stat(lazypath) then
 end
 vim.opt.rtp:prepend(lazypath)
 -- Setup lazy.nvim
-
 require("lazy").setup({
-	spec = { import = "plugins" }, -- or whatever
+	spec = { 
+		{import = "plugins"}, }, -- or whatever
 	performance = {
 		rtp = {
 			disabled_plugins = {
-				"tutor", -- You could also disable other builtin plugins, check :h standard-plugin and :h standard-plugin-list
+				"gzip",
+				"matchit",
+				"matchparen",
 				"netrwPlugin",
+				"tarPlugin",
+				"tohtml",
+				"tutor",
+				"zipPlugin",
 			},
 		},
 	},

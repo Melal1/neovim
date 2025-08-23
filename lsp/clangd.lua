@@ -62,7 +62,7 @@ end
 ---@field offsetEncoding? string
 
 return {
-  cmd = { 'clangd' },
+  cmd = { 'clangd','--cross-file-rename' },
   filetypes = { 'c', 'cpp', 'objc', 'objcpp', 'cuda' },
   root_markers = {
     '.clangd',

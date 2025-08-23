@@ -17,6 +17,7 @@ return {
 		filesystem = {
 			bind_to_cwd = true,
 			follow_current_file = { enabled = true },
+			hijack_netrw_behavior = "disabled", -- don't auto open
 
 			filtered_items = {
 				visible = true,

@@ -105,7 +105,7 @@ function M.compileAndDebug()
 			end
 			local compile_output = vim.fn.system(cmd)
 			if vim.v.shell_error ~= 0 then
-				print("Compilation failed:\n" .. compile_output)
+				vim.notify("Compilation failed:\n" .. compile_output)
 				return false
 			end
 			return true
@@ -118,7 +118,7 @@ function M.compileAndDebug()
 				local cmd = 'gdbserver --no-startup-with-shell :1234 "' .. noExt .. '"'
 				vim.fn.system("tmux split-window -h -l 30 " .. cmd)
 			else
-				print("To have a console make sure you are on tmux")
+				vim.notify("To have a console make sure you are on tmux")
 			end
 		end,
 	}
@@ -129,10 +129,33 @@ function M.compileAndDebug()
 			db[ft]()
 		end
 	else
-		print("File type '" .. ft .. "' is not supported")
+		vim.notify("File type '" .. ft .. "' is not supported")
 		return
 	end
 
 	return noExt
 end
+
+
+function M.lspRename(new_name)
+	local old_bufs = vim.api.nvim_list_bufs()
+	local old_buf_set = {}
+	for _, bufnr in ipairs(old_bufs) do
+		old_buf_set[bufnr] = true
+	end
+
+  vim.lsp.buf.rename(new_name)
+  vim.wait(500)
+	vim.cmd("silent wa")
+
+	local new_bufs = vim.api.nvim_list_bufs()
+
+	for _, bufnr in ipairs(new_bufs) do
+		if not old_buf_set[bufnr] then
+			-- print("Closing new buffer: " .. vim.api.nvim_buf_get_name(bufnr))
+			vim.api.nvim_buf_delete(bufnr, { force = true })
+		end
+	end
+end
+
 return M

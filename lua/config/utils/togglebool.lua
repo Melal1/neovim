@@ -53,7 +53,7 @@ function M.toggleBool(mode)
 	if replacement then
 		vim.cmd("normal! ciw" .. replacement)
 	else
-		print("No toggle or variant available for '" .. word .. "' :) ")
+		vim.notify("No toggle or variant available for '" .. word .. "' :) ")
 	end
 end
 return M

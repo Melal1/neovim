@@ -15,14 +15,16 @@ return {
 		---@type blink.cmp.Config
 		opts = {
 			keymap = {
-				preset = "enter",
+				preset = "default",
 
 				["<C-l>"] = { "snippet_forward", "fallback" },
 				["<C-h>"] = { "snippet_backward", "fallback" },
+        ["<Tab>"] = false,
+        ["<S-Tab>"] = false,
 			},
 
 			appearance = {
-				nerd_font_variant = "mono",
+        nerd_font_variant = "mono"
 			},
 
 			completion = { documentation = { auto_show = false } },
