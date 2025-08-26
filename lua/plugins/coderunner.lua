@@ -15,6 +15,7 @@ return {
 				local options = {
 					"Empty",
 					"-lncurses",
+          "-std=c++23",
 				}
 				vim.ui.select(options, { prompt = "Compile with ?" }, function(selected)
 					if not selected or selected == "Empty" then

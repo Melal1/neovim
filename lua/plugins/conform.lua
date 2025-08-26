@@ -27,6 +27,7 @@ return {
             UseTab: Never, \
             ColumnLimit: 9999,\
             BreakBeforeBraces: Allman, \
+            AlignArrayOfStructures: None,\
             AllowShortFunctionsOnASingleLine: None}",
 					},
 				},

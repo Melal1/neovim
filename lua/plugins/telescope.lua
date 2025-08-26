@@ -16,7 +16,7 @@ return {
 			{
 				"<leader>frg",
 				function()
-					MiniFiles.close()
+					-- MiniFiles.close()
 					require("telescope.builtin").registers()
 				end,
 				desc = "Registers",
@@ -24,7 +24,7 @@ return {
 			{
 				"<leader>ff",
 				function()
-					MiniFiles.close()
+					-- MiniFiles.close()
 					require("telescope.builtin").find_files()
 				end,
 				desc = "Find Files",
@@ -32,7 +32,7 @@ return {
 			{
 				"<leader>fg",
 				function()
-					MiniFiles.close()
+					-- MiniFiles.close()
 					require("telescope.builtin").live_grep()
 				end,
 				desc = "Live Grep",
@@ -40,7 +40,7 @@ return {
 			{
 				"<leader>fb",
 				function()
-					MiniFiles.close()
+					-- MiniFiles.close()
 					require("telescope.builtin").buffers()
 				end,
 				desc = "Buffers",
@@ -48,7 +48,7 @@ return {
 			{
 				"<leader>fp",
 				function()
-					MiniFiles.close()
+					-- MiniFiles.close()
 					require("telescope").extensions.projects.projects()
 				end,
 				desc = "Projects",
@@ -56,7 +56,7 @@ return {
 			{
 				"<leader>fSt",
 				function()
-					MiniFiles.close()
+					-- MiniFiles.close()
 					local word = vim.fn.expand("<cWORD>")
 					require("telescope.builtin").grep_string({ search = word })
 				end,
@@ -65,7 +65,7 @@ return {
 			{
 				"<leader>fst",
 				function()
-					MiniFiles.close()
+					-- MiniFiles.close()
 					local word = vim.fn.expand("<cword>")
 					require("telescope.builtin").grep_string({ search = word })
 				end,
@@ -74,7 +74,7 @@ return {
 			{
 				"<leader>fo",
 				function()
-					MiniFiles.close()
+					-- MiniFiles.close()
 					require("telescope.builtin").oldfiles()
 				end,
 				desc = "Old Files",
@@ -82,7 +82,7 @@ return {
 			{
 				"<leader>fsy",
 				function()
-					MiniFiles.close()
+					-- MiniFiles.close()
 					require("telescope.builtin").lsp_document_symbols()
 				end,
 				desc = "LSP Document Symbols",
@@ -90,7 +90,7 @@ return {
 			{
 				"<leader>fdia",
 				function()
-					MiniFiles.close()
+					-- MiniFiles.close()
 					require("telescope.builtin").diagnostics()
 				end,
 				desc = "Diagnostics",

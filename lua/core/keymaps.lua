@@ -42,7 +42,7 @@ end, { desc = "Open Neovim config directory on new tmux window or tab" })
 
 
 map("n", "<leader>ops", function()
-  local path = "~/.config/nvim/lua/config/Snippets/"
+  local path = "~/.config/nvim/lua/config/snippets/"
   local expanded_path = vim.fn.expand(path)
   if os.getenv("TMUX") then
     vim.fn.system(

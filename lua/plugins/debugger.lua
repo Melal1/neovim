@@ -113,9 +113,7 @@ return {
 			require("nvim-dap-virtual-text").setup({
 				only_first_definition = false,
 			})
-			-- local debuggerPath = os.getenv("CODELLDB_PATH")
-			local debuggerPath =
-				"/nix/store/5hhaywzrjxzbsv0wcy83pcs5c66ilb4z-vscode-extension-ms-vscode-cpptools-1.22.2/share/vscode/extensions/ms-vscode.cpptools/debugAdapters/bin/OpenDebugAD7"
+			local debuggerPath = os.getenv("CODELLDB_PATH")
 
 			dap.adapters.cppdbg = {
 				id = "cppdbg",

@@ -2,7 +2,7 @@ return {
 	"Melal1/dashboard-nvim",
 	branch = "myPref",
 	event = "VimEnter",
-	enabled = true,
+	enabled = false,
 	config = function()
 		require("dashboard").setup({
 			disable_move = true,

@@ -1,6 +1,7 @@
 return {
 	"echasnovski/mini.files",
 	version = false,
+  enabled = false,
 	lazy = false,
 	config = function()
 		local MiniFiles = require("mini.files")

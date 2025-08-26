@@ -33,7 +33,7 @@ return {
 			},
 			twilight = { enabled = false }, -- enable to start Twilight when zen mode opens
 			gitsigns = { enabled = true }, -- disables git signs
-			tmux = { enabled = true }, -- disables the tmux statusline
+			tmux = { enabled = false }, -- disables the tmux statusline
 			todo = { enabled = true }, -- if set to "true", todo-comments.nvim highlights will be disabled
 			-- this will change the font size on kitty when in zen mode
 			-- to make this work, you need to set the following kitty options:
@@ -45,11 +45,11 @@ return {
 			},
 		},
 		on_open = function(win)
-			os.execute("pkill -SIGUSR1 waybar &")
+			vim.fn.system([[tmux set status off]])
 		end,
 
 		on_close = function()
-			os.execute("pkill -SIGUSR1 waybar &")
+			vim.fn.system([[tmux set status on]])
 		end,
 		-- callback where you can add custom code when the Zen window opens
 	},
