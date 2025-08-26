@@ -28,6 +28,8 @@ return {
             ColumnLimit: 9999,\
             BreakBeforeBraces: Allman, \
             AlignArrayOfStructures: None,\
+            SeparateDefinitionBlocks: Always,\
+            EmptyLineBeforeAccessModifier: LogicalBlock,\
             AllowShortFunctionsOnASingleLine: None}",
 					},
 				},
