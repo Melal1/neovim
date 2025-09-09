@@ -103,6 +103,10 @@ function M.compileAndDebug()
 			if include then
 				cmd = cmd .. " -I" .. include
 			end
+			local extra = vim.fn.input("Extra compile options: ")
+			if extra ~= "" then
+				cmd = cmd .. " " .. extra
+			end
 			local compile_output = vim.fn.system(cmd)
 			if vim.v.shell_error ~= 0 then
 				vim.notify("Compilation failed:\n" .. compile_output)

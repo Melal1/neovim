@@ -40,6 +40,8 @@ vim.opt.wrap = false
 vim.opt.hlsearch = false
 vim.opt.incsearch = true
 vim.opt.guicursor = ""
+vim.cmd('autocmd BufEnter * set formatoptions-=cro')
+vim.cmd('autocmd BufEnter * setlocal formatoptions-=cro')
 -- vim.api.nvim_set_hl(0, "LineNr", { fg = "#4e4e4e", bold = false }) -- Normal line numbers
 
 -- ========================================

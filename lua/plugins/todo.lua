@@ -1,7 +1,7 @@
 return {
   --TODO:
   "folke/todo-comments.nvim",
-  keys = { { "<leader>ltd" }, { "<leader>tds", ":TodoTelescope<CR>" } },
+  keys = { { "<leader>ltd" }},
   dependencies = { "nvim-lua/plenary.nvim" },
   opts = {
     highlight = {

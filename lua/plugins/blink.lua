@@ -1,7 +1,9 @@
 return {
 	{
-    event = {"BufRead","BufNewFile"},
+
+		event = { "BufRead", "BufNewFile" },
 		"saghen/blink.cmp",
+		dependencies = { "fang2hou/blink-copilot" },
 		-- dependencies = { "rafamadriz/friendly-snippets" },
 
 		-- use a release tag to download pre-built binaries
@@ -15,32 +17,70 @@ return {
 		---@type blink.cmp.Config
 		opts = {
 			keymap = {
-				preset = "default",
 
+				preset = "default",
+				["<C-y>"] = { "hide" },
+				["<C-e>"] = { "select_and_accept" },
 				["<C-l>"] = { "snippet_forward", "fallback" },
 				["<C-h>"] = { "snippet_backward", "fallback" },
-        ["<Tab>"] = false,
-        ["<S-Tab>"] = false,
+				["<UP>"] = {
+					function(cmp)
+						cmp.show({ providers = { "snippets" } })
+					end,
+				},
+				["<DOWN>"] = {
+					function(cmp)
+						cmp.show({ providers = { "lsp" } })
+					end,
+				},
+				["<Tab>"] = false,
+				["<S-Tab>"] = false,
 			},
+			signature = { enabled = true },
 
 			appearance = {
-        nerd_font_variant = "mono"
+				nerd_font_variant = "mono",
 			},
 
-			completion = { documentation = { auto_show = false } },
+			completion = {
+				ghost_text = {
+					enabled = true,
+					show_with_menu = false,
+				},
+				menu = {
+					auto_show = false,
+				},
+				documentation = {
+					auto_show = false,
+				},
+			},
 
 			sources = {
-				default = { "snippets", "lsp", "path", "buffer" },
-        providers = {
-          lsp = {
-            score_offset = 9 ,
-          },
-          snippets = {
-            score_offset = 10 ,
-          }
-        }
+				default = { "snippets", "lsp", "path", "buffer", "copilot" },
+
+				providers = {
+					copilot = {
+						name = "copilot",
+						module = "blink-copilot",
+						score_offset = 100,
+						async = true,
+					},
+					lsp = {
+						score_offset = 9,
+					},
+					snippets = {
+						score_offset = 10,
+					},
+				},
 			},
-      fuzzy = { implementation = "rust" }
+			fuzzy = {
+				sorts = {
+					"exact",
+					"score",
+					"sort_text",
+				},
+				implementation = "rust",
+			},
 		},
 		opts_extend = { "sources.default" },
 	},

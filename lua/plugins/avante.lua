@@ -1,5 +1,6 @@
 return {
 	"yetone/avante.nvim",
+
 	build = "make",
 	keys = {
 		{
