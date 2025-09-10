@@ -42,6 +42,17 @@ return {
 				nerd_font_variant = "mono",
 			},
 
+			cmdline = {
+				completion = {
+					ghost_text = { enabled = true },
+				},
+				keymap = {
+					preset = "default",
+					["<C-y>"] = { "cancel" },
+					["<C-e>"] = { "select_and_accept" },
+				},
+			},
+
 			completion = {
 				ghost_text = {
 					enabled = true,
@@ -49,6 +60,12 @@ return {
 				},
 				menu = {
 					auto_show = false,
+					draw = {
+						columns = {
+							{ "kind_icon", "kind" },
+							{ "label", "label_description", gap = 1 },
+						},
+					},
 				},
 				documentation = {
 					auto_show = false,
