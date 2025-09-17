@@ -1,31 +1,21 @@
-# Changelog
-
 ## [Unreleased]
 
 ### Added
-- New `:CmakeDelete` command to remove `CMakeLists.txt` and `cmake/` build directory
-- `utils/pick.lua`: Telescope-based multi-file picker (used in `:CmakeSetup`)
-- Automatic `.clangd` generation during project setup
-- New cpp.lua commands:
-  - `:CmakeSetup` (scaffold project with std selection & file picking)
-  - `:CmakeAddFile` (add current file to sources)
-  - `:CmakeAddAll` (add all new .cpp/.c files to sources)
-  - `:CmakeClean` (remove missing files from sources)
-- Blink.nvim enhancements:
-  - Command-line ghost text
-  - New cmdline keymaps:
-    - `<C-y>` → cancel
-    - `<C-e>` → select and accept
+- Toggle for `clang-tidy` in `clangd` LSP configuration, including custom
+  checks and automatic server restart.
+- `ToggleInlayHints` and `ToggleTidy` commands for easier developer workflow.
+- Helper functions in `cpp.lua`:
+  - `get_source_files()` to collect `.c`/`.cpp` files from `src`.
+  - `format_sources_for_cmake()` to prepare paths for CMakeLists.
+  - `get_existing_sources()` to parse existing sources in CMake.
 
 ### Changed
-- CMake workflow refactored:
-  - Added project root detection (`src`, `include`, `.git`)
-  - `:CmakeSetup` now confirms project root and supports manual
-    file selection via Telescope
-  - Automatically runs cmake after modifying sources
-- Blink.nvim completion UI now displays in columns:
-  - (kind_icon, kind) and (label, label_description)
+- Refactored C++ user commands:
+  - Introduced constants for project structure (e.g. `CMAKE_DIR`, `CMAKE_FILE`).
+  - Improved code organization for better maintainability.
 
 ### Fixed
-- `:CmakeClean` now correctly removes missing files from sources
+- `.gitignore` now excludes `gitcommit.sh`.
+
+---
 

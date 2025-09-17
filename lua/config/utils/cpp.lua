@@ -1,5 +1,9 @@
 local M = {}
 
+function M.printHellow()
+  print("Hello from cpp utils!")
+end
+
 function M.find_include_dir(max_lvl)
 	local current_dir = vim.fn.expand("%:p:h")
 

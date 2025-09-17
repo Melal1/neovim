@@ -19,6 +19,7 @@ return {
 			keymap = {
 
 				preset = "default",
+				["<C-s>"] = { "show" },
 				["<C-y>"] = { "hide" },
 				["<C-e>"] = { "select_and_accept" },
 				["<C-l>"] = { "snippet_forward", "fallback" },

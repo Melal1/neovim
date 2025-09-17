@@ -1,5 +1,6 @@
 return {
 	"piersolenski/wtf.nvim",
+  enable = false ,
 	dependencies = {
 		"nvim-lua/plenary.nvim",
 		"MunifTanjim/nui.nvim",

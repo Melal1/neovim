@@ -1,4 +1,5 @@
 ---@brief
+
 ---
 --- https://clangd.llvm.org/installation.html
 ---
@@ -10,8 +11,8 @@
 ---   ```
 --- - clangd relies on a [JSON compilation database](https://clang.llvm.org/docs/JSONCompilationDatabase.html)
 ---   specified as compile_commands.json, see https://clangd.llvm.org/installation#compile_commandsjson
-
 -- https://clangd.llvm.org/extensions.html#switch-between-sourceheader
+
 local function switch_source_header(bufnr, client)
 	local method_name = "textDocument/switchSourceHeader"
 	---@diagnostic disable-next-line:param-type-mismatch
@@ -60,13 +61,34 @@ local function symbol_info(bufnr, client)
 	end, bufnr)
 end
 
+local disable_tidy = true
+
+local clang_tidy_checks =
+	"clang-analyzer-*,bugprone-*,performance-*,portability-*,readability-*,modernize-*,misc-*,-clang-analyzer-cplusplus*,-clang-analyzer-optin*,-bugprone-easily-swappable-parameters,-clang-analyzer-security.FloatLoopCounter,-clang-analyzer-security.insecureAPI*"
+
+local function get_cmd()
+	-- vim.notify("Called get_cmd")
+	if disable_tidy then
+		return { "clangd", "--background-index", "--clang-tidy=false" }
+	else
+		return { "clangd", "--background-index", "--clang-tidy", "--clang-tidy-checks=" .. clang_tidy_checks }
+	end
+end
+
+local function reuse_client(client, config)
+	return not disable_tidy and client.name == "clangd"
+end
+
 ---@class ClangdInitializeResult: lsp.InitializeResult
 ---@field offsetEncoding? string
-
 return {
-	-- workspace_required = true,
-  cmd = {"clangd", "--clang-tidy", "--background-index", "--cross-file-rename"},
+	cmd = function(dispatchers)
+		local cmd = get_cmd()
+		return vim.lsp.rpc.start(cmd, dispatchers)
+	end,
 	filetypes = { "c", "cpp", "objc", "objcpp", "cuda" },
+	reuse_client = reuse_client,
+
 	root_markers = {
 		".clangd",
 		".clang-tidy",
@@ -76,6 +98,7 @@ return {
 		"configure.ac", -- AutoTools
 		".git",
 	},
+
 	capabilities = {
 		textDocument = {
 			completion = {
@@ -84,13 +107,6 @@ return {
 		},
 		offsetEncoding = { "utf-8", "utf-16" },
 	},
-	---@param client vim.lsp.Client
-	---@param init_result ClangdInitializeResult
-	on_init = function(client, init_result)
-		if init_result.offsetEncoding then
-			client.offset_encoding = init_result.offsetEncoding
-		end
-	end,
 	---@param client vim.lsp.Client
 	---@param bufnr integer
 	on_attach = function(client, bufnr)
@@ -101,5 +117,28 @@ return {
 		vim.api.nvim_buf_create_user_command(bufnr, "LspClangdShowSymbolInfo", function()
 			symbol_info(bufnr, client)
 		end, { desc = "Show symbol info" })
+
+		if client.server_capabilities.inlayHintProvider then
+			vim.api.nvim_buf_create_user_command(bufnr, "ToggleInlayHints", function()
+				local enabled = vim.lsp.inlay_hint.is_enabled()
+				vim.lsp.inlay_hint.enable(not enabled)
+			end, { desc = "Toggle inlay hints" })
+		end
+
+		vim.api.nvim_buf_create_user_command(bufnr, "ToggelTidy", function()
+			if disable_tidy then
+				vim.notify("Enabling clang-tidy")
+			else
+				vim.notify("Disabling clang-tidy")
+			end
+			disable_tidy = not disable_tidy
+			vim.notify("Toggled clangd cmd, restarting LSP...")
+			if client.name == "clangd" then
+				client.stop(client, true)
+			end
+      vim.defer_fn(function()
+        vim.cmd("update | e!")
+      end, 500)
+		end, { desc = "Toggle clangd cmd and restart LSP" })
 	end,
 }
