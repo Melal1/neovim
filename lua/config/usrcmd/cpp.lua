@@ -12,7 +12,7 @@ vim.api.nvim_create_autocmd("FileType", {
 		end, {
 			nargs = 1,
 			complete = function()
-				return { "add", "edit", "run", "open" }
+				return { "add", "edit", "run", "open","edit_all","tasks"}
 			end,
 		})
 	end,
