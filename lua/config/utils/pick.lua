@@ -1,77 +1,267 @@
 local M = {}
+
 local has_telescope, pickers = pcall(require, "telescope.pickers")
 if not has_telescope then
 	M.available = false
 	return M
 end
+
 M.available = true
+
 local finders = require("telescope.finders")
 local conf = require("telescope.config").values
 local actions = require("telescope.actions")
 local action_state = require("telescope.actions.state")
 local themes = require("telescope.themes")
 
-function M.pick_files(files, callback, opts)
-	opts = opts or {}
+local DEFAULT_OPTS = {
+	prompt_title = "Select entries",
+	theme = "dropdown",
+	initial_mode = "normal",
+}
 
-	if not M.available then
+local function get_theme_config(theme_name, theme_opts)
+	local theme_func = themes["get_" .. theme_name]
+	if not theme_func then
+		theme_func = themes.get_dropdown
+	end
+	return theme_func(theme_opts or {})
+end
+
+local function validate_entries(entries)
+	if type(entries) ~= "table" then
+		return nil, "Entries must be a table"
+	end
+
+	if #entries == 0 then
+		return nil, "Entries table is empty"
+	end
+
+	local normalized_entries = {}
+	for i, entry in ipairs(entries) do
+		if type(entry) == "string" then
+			table.insert(normalized_entries, { value = entry, display = entry })
+		elseif type(entry) == "table" and entry.value then
+			table.insert(normalized_entries, entry)
+		else
+			return nil, string.format("Invalid entry at index %d", i)
+		end
+	end
+
+	return normalized_entries, nil
+end
+
+local function create_entry_maker(custom_maker)
+	if custom_maker then
+		return custom_maker
+	end
+
+	return function(entry)
+		return {
+			value = entry.value or entry,
+			display = entry.display or entry.value or entry,
+			ordinal = entry.ordinal or entry.display or entry.value or entry,
+		}
+	end
+end
+
+function M.pick_single(entries, callback, opts)
+	local normalized_entries, err = validate_entries(entries)
+	if not normalized_entries then
+		if callback then
+			callback(nil)
+		end
+		return false, err
+	end
+
+	opts = vim.tbl_deep_extend("force", DEFAULT_OPTS, opts or {})
+
+	local picker_opts = {
+		prompt_title = opts.prompt_title,
+		finder = finders.new_table({
+			results = normalized_entries,
+			entry_maker = create_entry_maker(opts.entry_maker),
+		}),
+		sorter = conf.generic_sorter(opts.sorter_opts or {}),
+		previewer = opts.previewer,
+		attach_mappings = function(prompt_bufnr, map)
+			if opts.mappings then
+				for mode, mode_mappings in pairs(opts.mappings) do
+					for key, action in pairs(mode_mappings) do
+						map(mode, key, action)
+					end
+				end
+			end
+
+			actions.select_default:replace(function()
+				local selection = action_state.get_selected_entry()
+				actions.close(prompt_bufnr)
+
+				local result = selection and selection.value or nil
+
+				if callback then
+					callback(result)
+				end
+			end)
+
+			return true
+		end,
+	}
+
+	local theme_config = get_theme_config(opts.theme, { initial_mode = opts.initial_mode })
+
+	pickers.new(theme_config, picker_opts):find()
+	return true, "Single-select picker opened successfully"
+end
+
+function M.pick_multi(entries, callback, opts)
+	local normalized_entries, err = validate_entries(entries)
+	if not normalized_entries then
 		if callback then
 			callback({})
 		end
-		return
+		return false, err
 	end
 
-	if type(files) ~= "table" or #files == 0 then
-		if callback then
-			callback({})
-		end
-		return
-	end
+	opts = vim.tbl_deep_extend("force", DEFAULT_OPTS, opts or {})
 
-	local prompt_title = opts.prompt_title or "Select files (<Tab> multi-select, <C-a> toggle all)"
+	local prompt_title = opts.show_hints ~= false
+			and string.format("%s (<Tab> toggle, <C-a> toggle all)", opts.prompt_title)
+		or opts.prompt_title
 
 	local function toggle_all(prompt_bufnr)
 		local picker = action_state.get_current_picker(prompt_bufnr)
-		local num_results = picker.manager:num_results()
+		local manager = picker.manager
+		local num_results = manager:num_results()
+
+		if num_results == 0 then
+			return
+		end
+
 		local selections = picker:get_multi_selection()
 		local all_selected = #selections == num_results
-		for i = 0, num_results - 1 do
-			if all_selected then
-				picker:remove_selection(i)
-			else
+
+		if not all_selected then
+			for i = 0, num_results - 1 do
 				picker:add_selection(i)
 			end
+		else
+			for i = 0, num_results - 1 do
+				picker:remove_selection(i)
+			end
 		end
+
+		picker:refresh_previewer()
 	end
 
-	pickers
-		.new(themes.get_dropdown({ initial_mode = "normal" }), {
-			prompt_title = prompt_title,
-			finder = finders.new_table({ results = files }),
-			sorter = conf.generic_sorter({}),
-			attach_mappings = function(prompt_bufnr, map)
-				map("n", "<Tab>", actions.toggle_selection)
-				map("i", "<Tab>", actions.toggle_selection)
+	local picker_opts = {
+		prompt_title = prompt_title,
+		finder = finders.new_table({
+			results = normalized_entries,
+			entry_maker = create_entry_maker(opts.entry_maker),
+		}),
+		sorter = conf.generic_sorter(opts.sorter_opts or {}),
+		previewer = opts.previewer,
+		attach_mappings = function(prompt_bufnr, map)
+			map("n", "<Tab>", actions.toggle_selection)
+			map("i", "<Tab>", actions.toggle_selection)
+			map("n", "<C-a>", toggle_all)
+			map("i", "<C-a>", toggle_all)
 
-				map("n", "<C-a>", toggle_all)
-				map("i", "<C-a>", toggle_all)
+			if opts.selection_strategy == "replace" then
+				map("n", "<C-t>", actions.toggle_selection)
+				map("i", "<C-t>", actions.toggle_selection)
+			end
 
-				actions.select_default:replace(function()
-					local picker = action_state.get_current_picker(prompt_bufnr)
-					local selections = picker:get_multi_selection()
-					actions.close(prompt_bufnr)
-					local result = {}
-					for _, f in ipairs(selections) do
-						table.insert(result, f.value)
+			if opts.mappings then
+				for mode, mode_mappings in pairs(opts.mappings) do
+					for key, action in pairs(mode_mappings) do
+						map(mode, key, action)
 					end
-					if callback then
-						callback(result)
+				end
+			end
+
+			actions.select_default:replace(function()
+				local picker = action_state.get_current_picker(prompt_bufnr)
+				local selections = picker:get_multi_selection()
+				local current_selection = action_state.get_selected_entry()
+
+				actions.close(prompt_bufnr)
+
+				local result = {}
+
+				if #selections == 0 and current_selection and opts.allow_single_fallback then
+					table.insert(result, current_selection.value)
+				else
+					for _, selection in ipairs(selections) do
+						table.insert(result, selection.value)
 					end
-				end)
-				return true
-			end,
-		})
-		:find()
+				end
+
+				if callback then
+					callback(result)
+				end
+			end)
+
+			return true
+		end,
+	}
+
+	local theme_config = get_theme_config(opts.theme, { initial_mode = opts.initial_mode })
+
+	pickers.new(theme_config, picker_opts):find()
+	return true, "Multi-select picker opened successfully"
+end
+
+function M.pick_single_simple(entries, callback)
+	return M.pick_single(entries, callback, {
+		theme = "dropdown",
+		initial_mode = "normal",
+	})
+end
+
+function M.pick_multi_simple(entries, callback)
+	return M.pick_multi(entries, callback, {
+		theme = "dropdown",
+		initial_mode = "normal",
+		show_hints = true,
+		allow_single_fallback = false,
+	})
+end
+
+function M.pick_single_with_preview(entries, callback, opts)
+	opts = opts or {}
+	opts.previewer = opts.previewer or conf.file_previewer(opts)
+	return M.pick_single(entries, callback, opts)
+end
+
+function M.pick_multi_with_preview(entries, callback, opts)
+	opts = opts or {}
+	opts.previewer = opts.previewer or conf.file_previewer(opts)
+	return M.pick_multi(entries, callback, opts)
+end
+
+function M.pick_entries(entries, callback, opts)
+	return M.pick_multi(entries, callback, opts)
+end
+
+function M.pick_option(options, callback, opts)
+	opts = opts or {}
+	opts.prompt_title = opts.prompt_title or "Select option"
+	return M.pick_single(options, callback, opts)
+end
+
+function M.pick_menu(menu_items, callback, opts)
+	opts = opts or {}
+	opts.prompt_title = opts.prompt_title or "Select action"
+	return M.pick_single(menu_items, callback, opts)
+end
+
+function M.pick_checklist(items, callback, opts)
+	opts = opts or {}
+	opts.prompt_title = opts.prompt_title or "Select items"
+	opts.show_hints = opts.show_hints ~= false
+	return M.pick_multi(items, callback, opts)
 end
 
 return M

@@ -71,7 +71,7 @@ function M.AddToMakefile(MakefilePath, FilePath, RootPath, Content)
 		end
 
 		if #ObjectFiles > 0 then
-			picker.pick_files(ObjectFiles, function(Selected)
+			picker.pick_checklist(ObjectFiles, function(Selected)
 				local Lines = Generator.ExecutableTarget(Basename, RelativePath, Selected, M.Config.MakefileVars)
 				local AppendSuccess, WriteErr = Utils.AppendToFile(MakefilePath, Lines)
 				if not AppendSuccess then
@@ -82,7 +82,7 @@ function M.AddToMakefile(MakefilePath, FilePath, RootPath, Content)
 					"Added executable target: " .. Basename .. " with " .. #Selected .. " dependencies",
 					vim.log.levels.INFO
 				)
-			end, { prompt_title = "Select object file dependencies (Tab to toggle, Enter to confirm)" })
+			end, { prompt_title = "Select object file dependencies" })
 		else
 			local Lines = Generator.ExecutableTarget(Basename, RelativePath, {}, M.Config.MakefileVars)
 			local AppendSuccess, WriteErr = Utils.AppendToFile(MakefilePath, Lines)
@@ -126,7 +126,7 @@ function M.EditTarget(MakefilePath, FilePath, RootPath, Content, on_done)
 		return
 	end
 
-	picker.pick_files(ObjectFiles, function(Selected)
+	picker.pick_checklist(ObjectFiles, function(Selected)
 		local Lines = {}
 		for line in Content:gmatch("([^\n]*)\n?") do
 			table.insert(Lines, line)
@@ -236,7 +236,7 @@ function M.PickAndRunTargets(makefile_content)
 
 	table.sort(display_labels)
 
-	picker.pick_files(display_labels, function(selected_labels)
+	picker.pick_checklist(display_labels, function(selected_labels)
 		if not selected_labels or #selected_labels == 0 then
 			vim.notify("No targets selected", vim.log.levels.WARN)
 			return
@@ -258,7 +258,7 @@ function M.PickAndRunTargets(makefile_content)
 		vim.cmd("terminal " .. cmd)
 		vim.notify("Running targets: " .. table.concat(selected_targets, ", "), vim.log.levels.INFO)
 	end, {
-		prompt_title = "Select Makefile target(s) (Tab to toggle, Enter to confirm)",
+		prompt_title = "Select Makefile target(s) ",
 	})
 end
 
@@ -292,7 +292,7 @@ function M.EditAllTargets(makefile_content, makefile_path, root_path)
 		return
 	end
 
-	picker.pick_files(editable_targets, function(selected_targets)
+	picker.pick_checklist(editable_targets, function(selected_targets)
 		if not selected_targets or #selected_targets == 0 then
 			vim.notify("No targets selected", vim.log.levels.WARN)
 			return
@@ -318,7 +318,7 @@ function M.EditAllTargets(makefile_content, makefile_path, root_path)
 
 		edit_next(1)
 	end, {
-		prompt_title = "Select executable targets to edit (Tab to toggle, Enter to confirm)",
+		prompt_title = "Select executable targets to edit ",
 	})
 end
 

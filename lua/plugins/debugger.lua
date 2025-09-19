@@ -109,7 +109,7 @@ return {
 		},
 		config = function()
 			local dap = require("dap")
-			vim.keymap.set("n", "<leader>daw","<cmd>DapViewWatch<CR>", { desc = "Add under cursor to watch list" })
+			vim.keymap.set("n", "<leader>daw", "<cmd>DapViewWatch<CR>", { desc = "Add under cursor to watch list" })
 			require("nvim-dap-virtual-text").setup({
 				only_first_definition = false,
 			})
@@ -143,7 +143,7 @@ return {
 					miDebuggerPath = "/run/current-system/sw/bin/gdb",
 					cwd = "${workspaceFolder}",
 					program = function()
-						local msg = require("config.utils.cpp").compileAndDebug()
+						local msg = require("config.utils.debug").Debug()
 						return msg
 					end,
 				},
