@@ -1,18 +1,13 @@
 return {
-    "lukas-reineke/indent-blankline.nvim",
-    main = "ibl",
-    ---@module "ibl"
-    ---@type ibl.config
-    opts = {},
-    config = function()
-        require("ibl").setup({
+	"lukas-reineke/indent-blankline.nvim",
+	event = "BufRead",
+	main = "ibl",
+	---@module "ibl"
+	---@type ibl.config
 
-
-      scope = {
-
-        enabled = false, 
-      },
-
-    })
-    end,
+	config = function()
+		vim.cmd([[highlight IblIndent guifg=#252530 gui=nocombine]])
+		vim.cmd([[highlight IblScope guifg=#c9b1ca gui=nocombine]])
+		require("ibl").setup({})
+	end,
 }

@@ -1,5 +1,8 @@
-# neovim
-My new neovim config "the old one was not good"
-Frozen for now ,
-check nix brach for latest update
+# Neovim Configuration 
+
+## TODO:
+- [ ] Edit debugger keys (Not the best keymaps tbh).
+- [ ] Add more debugger keymaps ( Widgits ..etc).
+- [ ] Configre blink more to my liking .
+
 

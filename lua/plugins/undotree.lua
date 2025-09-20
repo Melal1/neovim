@@ -1,11 +1,14 @@
 return {
-    "mbbill/undotree",
-    config = function()
-        -- Set keymap for toggling undotree
-        vim.keymap.set('n', '<leader>U', vim.cmd.UndotreeToggle)
-        
-        -- Set window layout for undotree
-       vim.g.undotree_WindowLayout = 3
-    end,
+  "mbbill/undotree",
+  keys = {
+    {
+      "<leader>lut",
+      "<cmd>UndotreeToggle<CR>",
+      desc = "Toggle Undotree",
+    },
+  },
+  config = function()
+    vim.g.undotree_WindowLayout = 3
+  end,
 }
 
