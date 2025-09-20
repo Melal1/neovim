@@ -118,8 +118,8 @@ return {
 		config = function()
 			require("vague").setup({
 				transparent = true,
-        bold = true ,
-        italic = true,
+				bold = true,
+				italic = true,
 				style = {
 					-- "none" is the same thing as default. But "italic" and "bold" are also valid options
 					boolean = "italic",
@@ -146,6 +146,23 @@ return {
 					builtin_functions = "italic",
 					builtin_types = "bold",
 					builtin_variables = "italic",
+				},
+
+				plugins = {
+					cmp = {
+						match = "bold",
+						match_fuzzy = "bold",
+					},
+					lsp = {
+						diagnostic_error = "bold",
+						diagnostic_hint = "none",
+						diagnostic_info = "italic",
+						diagnostic_ok = "none",
+						diagnostic_warn = "bold",
+					},
+					telescope = {
+						match = "bold",
+					},
 				},
 			})
 

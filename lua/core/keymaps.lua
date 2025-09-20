@@ -1,5 +1,10 @@
 local map = vim.keymap.set
 
+-- Expermintal
+map("n", "<leader>rm", function()
+	require("config.utils.make").RunMake()
+end)
+
 map("n", "<C-q>", "<cmd>wqa!<CR>")
 map("n", "<leader><C-q>", "<cmd>qa!<CR>")
 
@@ -9,11 +14,11 @@ map("n", "<leader><C-q>", "<cmd>qa!<CR>")
 map("t", "<ESC><ESC>", "<C-\\><C-n>", { desc = "Exit terminal mode" })
 map({ "t", "n" }, "<leader>tt", function()
 	require("config.utils.toggleTerm").toggle()
-end,{desc = "Toggle split term"})
+end, { desc = "Toggle split term" })
 
 map({ "t", "n" }, "<leader>tk", function()
 	require("config.utils.toggleTerm").kill()
-end,{desc = "kill split term"})
+end, { desc = "kill split term" })
 
 -- Search and replace
 map("n", "<leader>a", [[:%s/<C-r><C-w>/<C-r><C-w>/gc<Left><Left><Left>]], {
@@ -77,7 +82,8 @@ map("n", "<leader>Y", [["+Y]], { desc = "Yank line to system clipboard" })
 map({ "n", "v" }, "<leader>d", "d", { desc = "Delete selection normally" })
 
 -- Change working directory to current file's directory
-map("n", "<leader>cd", "<cmd>cd %:p:h<CR>", { desc = "Set local working directory to current file" })
+map("n", "<leader>cd", "<cmd>lcd %:p:h<CR>", { desc = "Set local working directory to current file" })
+map("n", "<leader>Cd", "<cmd>cd %:p:h<CR>", { desc = "Set Global working directory to current file" })
 
 -- Center screen after scrolling/search
 map("n", "<C-d>", "<C-d>zz", { desc = "Scroll half page down and center" })

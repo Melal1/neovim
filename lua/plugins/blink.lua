@@ -62,9 +62,29 @@ return {
 				menu = {
 					auto_show = false,
 					draw = {
+						components = {
+							source_name = {
+								text = function(ctx)
+									if ctx.source_name == "LSP" then
+										return "[LSP]"
+									end
+									if ctx.source_name == "Snippets" then
+										return "[SNIP]"
+									end
+									if ctx.source_name == "Buffer" then
+										return "[BUF]"
+									end
+									if ctx.source_name == "Path" then
+										return "[PATH]"
+									end
+								end,
+							},
+						},
+						gap = 2,
 						columns = {
-							{ "kind_icon", "kind" },
+							{ "source_name", gap = 1 },
 							{ "label", "label_description", gap = 1 },
+							{ "kind_icon", "kind" , gap = 2},
 						},
 					},
 				},

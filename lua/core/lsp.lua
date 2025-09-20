@@ -31,7 +31,7 @@ vim.diagnostic.config({
 vim.keymap.set("n", "grn", function()
 	vim.ui.input({ prompt = "New name: " }, function(new_name)
 		if new_name then
-			require("config.utils.cpp").lspRename(new_name)
+			require("config.utils.debug").lspRename(new_name)
 		end
 	end)
 end, { desc = "Lsp rename" })
