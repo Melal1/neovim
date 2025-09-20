@@ -1,7 +1,8 @@
-# Neovim Configuration for NixOS
+# Neovim Configuration 
 
 ## TODO:
 - [ ] Edit debugger keys (Not the best keymaps tbh).
 - [ ] Add more debugger keymaps ( Widgits ..etc).
 - [ ] Configre blink more to my liking .
+
 
