@@ -4,7 +4,7 @@ local Config = require("config.utils.make.config")
 local Utils = require("config.utils.make.utils")
 local Parser = require("config.utils.make.parser")
 local Generator = require("config.utils.make.generator")
-local RootFinder = require("config.utils.make.root_find")
+local RootFinder = require("config.utils.make.finder")
 
 M.Config = Config.DefaultConfig
 
@@ -72,7 +72,15 @@ function M.AddToMakefile(MakefilePath, FilePath, RootPath, Content)
 
 		if #ObjectFiles > 0 then
 			picker.pick_checklist(ObjectFiles, function(Selected)
-				local Lines = Generator.ExecutableTarget(Basename, RelativePath, Selected, M.Config.MakefileVars)
+				local status, Lines =
+					Generator.ExecutableTarget(Basename, RelativePath, Selected, M.Config.MakefileVars, RootPath)
+				if not status then
+					vim.notify(
+						"Failed to generate executable target. Missing include paths for: " .. table.concat(Lines, ", "),
+						vim.log.levels.ERROR
+					)
+					return
+				end
 				local AppendSuccess, WriteErr = Utils.AppendToFile(MakefilePath, Lines)
 				if not AppendSuccess then
 					vim.notify("Failed to write to Makefile: " .. WriteErr, vim.log.levels.ERROR)
@@ -84,7 +92,7 @@ function M.AddToMakefile(MakefilePath, FilePath, RootPath, Content)
 				)
 			end, { prompt_title = "Select object file dependencies" })
 		else
-			local Lines = Generator.ExecutableTarget(Basename, RelativePath, {}, M.Config.MakefileVars)
+			local _, Lines = Generator.ExecutableTarget(Basename, RelativePath, {}, M.Config.MakefileVars, RootPath)
 			local AppendSuccess, WriteErr = Utils.AppendToFile(MakefilePath, Lines)
 			if not AppendSuccess then
 				vim.notify("Failed to write to Makefile: " .. WriteErr, vim.log.levels.ERROR)
@@ -94,103 +102,6 @@ function M.AddToMakefile(MakefilePath, FilePath, RootPath, Content)
 		end
 		return true
 	end
-end
-
-function M.EditTarget(MakefilePath, FilePath, RootPath, Content, on_done)
-	local Basename = vim.fn.fnamemodify(FilePath, ":t:r")
-	local Targets = Parser.ParseTargets(Content)
-
-	if not Targets[Basename] then
-		vim.notify("Target '" .. Basename .. "' not found in Makefile.", vim.log.levels.WARN)
-		if on_done then
-			on_done()
-		end
-		return
-	end
-
-	local ObjectFiles = Parser.GetObjectFiles(Targets)
-	if #ObjectFiles == 0 then
-		vim.notify("No object files found to select as dependencies.", vim.log.levels.WARN)
-		if on_done then
-			on_done()
-		end
-		return
-	end
-
-	local picker = require("config.utils.pick")
-	if not picker.available then
-		vim.notify("Need Telescope for file selection", vim.log.levels.ERROR)
-		if on_done then
-			on_done()
-		end
-		return
-	end
-
-	picker.pick_checklist(ObjectFiles, function(Selected)
-		local Lines = {}
-		for line in Content:gmatch("([^\n]*)\n?") do
-			table.insert(Lines, line)
-		end
-
-		local NewLines = {}
-		local InsideTarget = false
-		local TargetUpdated = false
-		local LinkDepsStr = ""
-
-		for _, line in ipairs(Lines) do
-			if line:match("^%s*" .. Utils.EscapePattern(Basename) .. "%s*:") then
-				local DepsStr = ""
-				if #Selected > 0 then
-					DepsStr = table.concat(Selected, " ") .. " "
-					local Prefixed = {}
-					for _, dep in ipairs(Selected) do
-						table.insert(Prefixed, "$(BUILD_DIR)/" .. dep)
-					end
-					LinkDepsStr = table.concat(Prefixed, " ") .. " "
-				end
-
-				table.insert(NewLines, Basename .. ": " .. DepsStr .. Basename .. ".o")
-				InsideTarget = true
-				TargetUpdated = true
-			elseif InsideTarget and line:match("^\t") then
-				local CompilerVar = M.Config.MakefileVars.CC and "$(CC)" or "$(CXX)"
-				table.insert(
-					NewLines,
-					"\t"
-						.. CompilerVar
-						.. " $(BUILD_DIR)/"
-						.. Basename
-						.. ".o "
-						.. LinkDepsStr
-						.. "-o $(BUILD_DIR)/"
-						.. Basename
-				)
-				InsideTarget = false
-			else
-				table.insert(NewLines, line)
-				InsideTarget = false
-			end
-		end
-
-		if TargetUpdated then
-			local NewContent = table.concat(NewLines, "\n")
-			local WriteSuccess, WriteErr = Utils.WriteFile(MakefilePath, NewContent)
-			if not WriteSuccess then
-				vim.notify("Failed to update Makefile: " .. WriteErr, vim.log.levels.ERROR)
-			else
-				vim.notify(
-					"Updated target: " .. Basename .. " with " .. #Selected .. " dependencies",
-					vim.log.levels.INFO
-				)
-			end
-		else
-			vim.notify("Failed to update target in Makefile", vim.log.levels.ERROR)
-		end
-
-		if on_done then
-			on_done()
-		end
-	end, { prompt_title = "Select new dependencies for " .. Basename })
 end
 
 function M.RunTarget(MakefilePath, FilePath, Content)
@@ -320,6 +231,130 @@ function M.EditAllTargets(makefile_content, makefile_path, root_path)
 	end, {
 		prompt_title = "Select executable targets to edit ",
 	})
+end
+
+function M.EditTarget(MakefilePath, FilePath, RootPath, Content, callback)
+	local Basename = vim.fn.fnamemodify(FilePath, ":t:r")
+	local ObjName = Basename .. ".o"
+	local ExeName = Basename
+	local RunName = "run" .. ExeName
+
+	local Targets = Parser.ParseTargets(Content or "")
+	if not (Targets[ObjName] or Targets[ExeName] or Targets[RunName]) then
+		vim.notify("No existing target found for: " .. Basename, vim.log.levels.WARN)
+		if callback then
+			callback(false)
+		end
+		return false
+	end
+
+	-- collect available object files
+	local ObjectFiles = Parser.GetObjectFiles(Targets)
+	if not ObjectFiles or #ObjectFiles == 0 then
+		vim.notify("No object files available for dependency selection", vim.log.levels.WARN)
+		if callback then
+			callback(false)
+		end
+		return false
+	end
+
+	-- check picker availability
+	local picker = require("config.utils.pick")
+	if not picker.available then
+		vim.notify("Telescope is required for editing targets", vim.log.levels.ERROR)
+		if callback then
+			callback(false)
+		end
+		return false
+	end
+
+	-- picker: select new dependencies
+	picker.pick_checklist(ObjectFiles, function(selected)
+		if not selected or #selected == 0 then
+			vim.notify("No dependencies selected", vim.log.levels.WARN)
+			if callback then
+				callback(false)
+			end
+			return
+		end
+
+		local RelativePath, Err = Utils.GetRelativePath(FilePath, RootPath)
+		if not RelativePath then
+			vim.notify(Err or "Failed to get relative path", vim.log.levels.ERROR)
+			if callback then
+				callback(false)
+			end
+			return
+		end
+
+		local Lines = vim.split(Content, "\n", { plain = true })
+		local NewLines = {}
+		local StartMarker = "#marker_start: " .. RelativePath
+		local EndMarker = "#marker_end: " .. RelativePath
+		local skip = false
+		local end_index = nil
+
+		for idx, line in ipairs(Lines) do
+      print("checking line with start marker_start " .. StartMarker .. ": " .. line)
+			if line:find(StartMarker, 1, true) then
+				print("-> Start marker found at line " .. idx .. ". Skipping lines...")
+				skip = true
+			end
+
+			if skip == false then
+				table.insert(NewLines, line)
+				print("-> Keeping line: " .. line)
+			else
+				print("-> Skipping line: " .. line)
+        print("Checking for end marker: " .. EndMarker .. " Line: " .. line)
+			end
+
+			if line:find(EndMarker, 1, true) and skip then
+				print("-> End marker found at line " .. idx .. ". Stopping skip.")
+				end_index = idx + 1 -- start keeping from the line after end marker
+				break
+			end
+		end
+
+		-- insert the remaining lines after the end marker
+		if end_index then
+			for i = end_index + 1, #Lines do
+				table.insert(NewLines, Lines[i])
+			end
+		end
+
+		Content = table.concat(NewLines, "\n")
+		print("Old block removed. Content updated.")
+
+		-- regenerate blocks
+		local status, GenLines =
+			Generator.ExecutableTarget(Basename, RelativePath, selected, M.Config.MakefileVars, RootPath)
+		if not status then
+			vim.notify(
+				"Failed to regenerate target. Missing include paths for: " .. table.concat(GenLines, ", "),
+				vim.log.levels.ERROR
+			)
+			if callback then
+				callback(false)
+			end
+			return
+		end
+
+		-- write back Makefile
+		local Success, WriteErr = Utils.WriteFile(MakefilePath, Content .. "\n" .. table.concat(GenLines, "\n"))
+		if not Success then
+			vim.notify("Failed to write Makefile: " .. WriteErr, vim.log.levels.ERROR)
+			if callback then
+				callback(false)
+			end
+			return
+		end
+
+		vim.notify("Edited target: " .. ExeName .. " with " .. #selected .. " dependencies", vim.log.levels.INFO)
+		if callback then
+			callback(true)
+		end
+	end, { prompt_title = "Select new dependencies for " .. ExeName })
 end
 
 function M.RunMake(Arg)
