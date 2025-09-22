@@ -3,6 +3,7 @@ local Config = {}
 Config.DefaultConfig = {
 	BuildDir = "./build",
 	SourceExtensions = { ".cpp", ".c", ".cc", ".cxx" },
+  --TODO: Headers
 	RootMarkers = { ".git", "src", "include", "build", "Makefile" },
 	MaxSearchLevels = 5,
 

@@ -23,9 +23,13 @@ function Generator.ObjectTarget(Basename, RelativePath, MakefileVars)
 	local FlagsVar = MakefileVars.CFLAGS and "$(CFLAGS)" or "$(CXXFLAGS)"
 
 	return {
+    "#marker_start: " ..RelativePath,
+    "",
 		ObjName .. ": " .. RelativePath,
 		"\t" .. CompilerVar .. " " .. FlagsVar .. " -c " .. RelativePath .. " -o $(BUILD_DIR)/" .. ObjName,
 		"",
+    "#marker_end: " ..RelativePath,
+    "",
 	}
 end
 
@@ -95,7 +99,7 @@ function Generator.ExecutableTarget(Basename, RelativePath, Dependencies, Makefi
 end
 
 function Generator.EnsureMakefileVariables(MakefilePath, Content, MakefileVars)
-	if not Parser.HasBuildVariables(Content, MakefileVars) then
+	if not Parser.HasReqVars(Content, MakefileVars) then
 		local VarLines = Generator.GenerateMakefileVariables(MakefileVars)
 		local NewContent = table.concat(VarLines, "\n") .. (Content or "")
 
