@@ -6,7 +6,6 @@ function Parser.ParseVariables(Content)
 	if not Content then
 		return Variables
 	end
-
 	for Line in Content:gmatch("[^\n]+") do
 		Line = Line:match("^%s*(.-)%s*$")
 		if Line and Line ~= "" and not Line:match("^#") then
@@ -43,10 +42,11 @@ function Parser.FindMarker(Content, RelativePath, CheckStart, CheckEnd)
 	if not CheckEnd then
 		info.M_end = -1
 	end
+
 	if info.M_start == -1 and info.M_end == -1 then
 		return info
 	end
-	for line in Content:gmatch("[^\n]+") do
+	for line in Content:gmatch("([^\n]*)\n?") do
 		lineNumber = lineNumber + 1
 		local trimmedLine = line:match("^%s*(.-)%s*$")
 		if not trimmedLine:match("^%s*#") or trimmedLine == "" then
@@ -54,6 +54,7 @@ function Parser.FindMarker(Content, RelativePath, CheckStart, CheckEnd)
 		end
 		if not info.M_start and CheckStart then
 			if trimmedLine:match("^%s*#%s*marker_start%s*:%s*" .. escapedPath) then
+				print("Start marker at line " .. lineNumber .. " with text: " .. trimmedLine)
 				info.M_start = lineNumber
 				if not CheckEnd then
 					return info
@@ -62,6 +63,7 @@ function Parser.FindMarker(Content, RelativePath, CheckStart, CheckEnd)
 		end
 		if not info.M_end and info.M_start and CheckEnd then
 			if trimmedLine:match("^%s*#%s*marker_end%s*:%s*" .. escapedPath) then
+				print("Found End marker at line " .. lineNumber .. " with text: " .. trimmedLine)
 				info.M_end = lineNumber
 				return info
 			end
@@ -78,7 +80,7 @@ function Parser.FindAllMarkerPairs(Content)
 	if not Content then
 		return allPairs
 	end
-	for line in Content:gmatch("[^\n]+") do
+	for line in Content:gmatch("([^\n]*)\n?") do
 		lineNumber = lineNumber + 1
 		local trimmedLine = line:match("^%s*(.-)%s*$")
 		if trimmedLine:match("^%s*#") then
@@ -112,7 +114,7 @@ function Parser.ReadContentBetweenMarkers(Content, RelativePath)
 	if StartLine == -1 or EndLine == -1 then
 		return ""
 	end
-	for line in Content:gmatch("[^\n]+") do
+	for line in Content:gmatch("([^\n]*)\n?") do
 		currentLineNumber = currentLineNumber + 1
 		if currentLineNumber > StartLine and currentLineNumber < EndLine then
 			table.insert(contentLines, line)
@@ -351,4 +353,3 @@ function Parser.PrintAnalysisSummary(Content)
 end
 
 return Parser
-

@@ -35,12 +35,18 @@ return {
 			},
 		})
 
-    -- Select
+		-- Select
 		vim.keymap.set({ "x", "o" }, "am", function()
 			require("nvim-treesitter-textobjects.select").select_textobject("@call.outer", "textobjects")
 		end)
 		vim.keymap.set({ "x", "o" }, "im", function()
 			require("nvim-treesitter-textobjects.select").select_textobject("@call.inner", "textobjects")
+		end)
+		vim.keymap.set({ "x", "o" }, "ai", function()
+			require("nvim-treesitter-textobjects.select").select_textobject("@conditional.outer")
+		end)
+		vim.keymap.set({ "x", "o" }, "ii", function()
+			require("nvim-treesitter-textobjects.select").select_textobject("@conditional.inner", "textobjects")
 		end)
 		vim.keymap.set({ "x", "o" }, "af", function()
 			require("nvim-treesitter-textobjects.select").select_textobject("@function.outer", "textobjects")
@@ -67,7 +73,6 @@ return {
 		end)
 		vim.keymap.set("n", "<leader>=a", function()
 			require("nvim-treesitter-textobjects.swap").swap_previous("@parameter.inner")
-
 		end)
 		vim.keymap.set("n", "<leader>=F", function()
 			require("nvim-treesitter-textobjects.swap").swap_previous("@function.outer")
