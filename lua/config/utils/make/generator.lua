@@ -1,5 +1,6 @@
 local Utils = require("config.utils.make.utils")
 local Parser = require("config.utils.make.parser")
+local Finder = require("config.utils.make.finder")
 
 local Generator = {}
 
@@ -22,13 +23,17 @@ function Generator.ObjectTarget(Basename, RelativePath, MakefileVars)
 	local FlagsVar = MakefileVars.CFLAGS and "$(CFLAGS)" or "$(CXXFLAGS)"
 
 	return {
+    "#marker_start: " ..RelativePath,
+    "",
 		ObjName .. ": " .. RelativePath,
 		"\t" .. CompilerVar .. " " .. FlagsVar .. " -c " .. RelativePath .. " -o $(BUILD_DIR)/" .. ObjName,
 		"",
+    "#marker_end: " ..RelativePath,
+    "",
 	}
 end
 
-function Generator.ExecutableTarget(Basename, RelativePath, Dependencies, MakefileVars)
+function Generator.ExecutableTarget(Basename, RelativePath, Dependencies, MakefileVars, RootPath)
 	Dependencies = Dependencies or {}
 	local ObjName = Basename .. ".o"
 	local ExeName = Basename
@@ -37,6 +42,9 @@ function Generator.ExecutableTarget(Basename, RelativePath, Dependencies, Makefi
 
 	local DepsStr = ""
 	local LinkDepsStr = ""
+	local UnFoiundIncludePath = {}
+	local Include = {}
+	local IncludeStr = ""
 
 	if #Dependencies > 0 then
 		DepsStr = table.concat(Dependencies, " ") .. " "
@@ -44,28 +52,54 @@ function Generator.ExecutableTarget(Basename, RelativePath, Dependencies, Makefi
 		local PrefixedDeps = {}
 		for _, Dep in ipairs(Dependencies) do
 			table.insert(PrefixedDeps, "$(BUILD_DIR)/" .. Dep)
+			local IncludePath = Finder.FindHeaderDirectory(vim.fn.fnamemodify(Dep, ":t:r"), RootPath)
+			if IncludePath then
+				table.insert(Include, "-I" .. IncludePath)
+			else
+				table.insert(UnFoiundIncludePath, Dep)
+			end
 		end
 		LinkDepsStr = table.concat(PrefixedDeps, " ") .. " "
+		IncludeStr = table.concat(Include, " ") .. " "
 	end
 
-	return {
+	if #UnFoiundIncludePath > 0 then
+		return nil, UnFoiundIncludePath
+	end
 
-		ObjName .. ": " .. RelativePath,
-		"\t" .. CompilerVar .. " " .. FlagsVar .. " -c " .. RelativePath .. " -o $(BUILD_DIR)/" .. ObjName,
-		"",
+	return true,
+		{
+			"#marker_start: " .. RelativePath,
+      "",
+			ObjName .. ": " .. RelativePath,
+			"\t"
+				.. CompilerVar
+				.. " "
+				.. FlagsVar
+				.. " -c "
+				.. RelativePath
+				.. " -o $(BUILD_DIR)/"
+				.. ObjName
+				.. " "
+				.. IncludeStr,
+			"",
 
-		ExeName .. ": " .. DepsStr .. ObjName,
-		"\t" .. CompilerVar .. " $(BUILD_DIR)/" .. ObjName .. " " .. LinkDepsStr .. "-o $(BUILD_DIR)/" .. ExeName,
-		"",
+			ExeName .. ": " .. DepsStr .. ObjName,
+			"\t" .. CompilerVar .. " $(BUILD_DIR)/" .. ObjName .. " " .. LinkDepsStr .. "-o $(BUILD_DIR)/" .. ExeName,
+			"",
 
-		"run" .. ExeName .. ": " .. ExeName,
-		"\t$(BUILD_DIR)/" .. ExeName,
-		"",
-	}
+			"run" .. ExeName .. ": " .. ExeName,
+			"\t$(BUILD_DIR)/" .. ExeName,
+			"",
+
+      "#marker_end: " .. RelativePath,
+      "",
+
+		}
 end
 
 function Generator.EnsureMakefileVariables(MakefilePath, Content, MakefileVars)
-	if not Parser.HasBuildVariables(Content, MakefileVars) then
+	if not Parser.HasReqVars(Content, MakefileVars) then
 		local VarLines = Generator.GenerateMakefileVariables(MakefileVars)
 		local NewContent = table.concat(VarLines, "\n") .. (Content or "")
 

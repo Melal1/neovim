@@ -10,6 +10,6 @@ return {
 	build = ":TSUpdate",
 	config = function()
 		local ts = require("nvim-treesitter")
-		ts.install({ "cpp", "bash", "lua", "rust" })
+		ts.install({ "cpp", "bash", "lua", "rust" ,"make"})
 	end,
 }
