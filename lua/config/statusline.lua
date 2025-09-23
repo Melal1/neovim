@@ -1,3 +1,10 @@
+vim.api.nvim_create_autocmd("User", {
+	pattern = "LspProgressStatusUpdated",
+	callback = function()
+		vim.cmd("redrawstatus")
+	end,
+})
+
 local M = {}
 vim.o.showmode = false
 
@@ -47,6 +54,15 @@ local mode_info = {
 	["!"] = { hl = "WarningMsg", name = " ! " },
 	["t"] = { hl = "Title", name = " T " },
 }
+
+function M.lsp_progress_component()
+  local lsp_progress = require("lsp-progress").progress()
+  if lsp_progress == "" then
+    return ""
+  end
+  return "%#Identifier# " .. lsp_progress .. "%#Normal#"
+end
+
 
 function M.git_component()
 	local head = vim.b.gitsigns_head
@@ -147,10 +163,12 @@ function M.render()
 		"  ",
 		M.git_component(),
 		"%=",
-		M.diagnostics_component(),
-		" ",
 		M.dap_component(),
 		"  ",
+		M.diagnostics_component(),
+		"",
+    M.lsp_progress_component(),
+    "  ",
 		position_component(),
 	})
 end
