@@ -105,7 +105,25 @@ function Parser.FindAllMarkerPairs(Content)
 	return allPairs
 end
 
-function Parser.ReadContentBetweenMarkers(Content, RelativePath)
+function Parser.ReadContentBetweenLines(Content, StartLine, EndLine, ReturnTable)
+	ReturnTable = not not ReturnTable
+	local contentLines = {}
+	local currentLineNumber = 0
+	for line in Content:gmatch("([^\n]*)\n?") do
+		currentLineNumber = currentLineNumber + 1
+		if currentLineNumber > StartLine and currentLineNumber < EndLine then
+			table.insert(contentLines, line)
+		end
+	end
+	if ReturnTable then
+		return contentLines
+	end
+	return table.concat(contentLines, "\n")
+end
+
+function Parser.ReadContentBetweenMarkers(Content, RelativePath, ReturnTable)
+	--| ReturnTable = (ReturnTable ~= false and ReturnTable ~= nil)
+	ReturnTable = not not ReturnTable --| Same as up
 	local contentLines = {}
 	local currentLineNumber = 0
 	local markerInfo = Parser.FindMarker(Content, RelativePath, true, true)
@@ -119,6 +137,9 @@ function Parser.ReadContentBetweenMarkers(Content, RelativePath)
 		if currentLineNumber > StartLine and currentLineNumber < EndLine then
 			table.insert(contentLines, line)
 		end
+	end
+	if ReturnTable then
+		return contentLines
 	end
 	return table.concat(contentLines, "\n")
 end

@@ -386,12 +386,12 @@ function M.Remove(MakefilePath ,Content)
 	for _, Entry in ipairs(Entries) do
 		table.insert(
 			PickerEntries,
-			{ value = Entry.startLine, display = Entry.baseName .. " ( " .. Entry.analysis.type .. " )" }
+			{ value = Entry.startLine, display = Entry.baseName .. " ( " .. Entry.analysis.type .. " )" ,preview_text = Parser.ReadContentBetweenLines(Content,Entry.startLine,Entry.endLine,true)}
 		)
 		map[Entry.startLine] = Entry
 	end
 
-	picker.pick_multi(PickerEntries, function(selected)
+	picker.pick_multi_with_preview(PickerEntries, function(selected)
 		if #selected == 0 then
 			vim.notify("Nothing selected", vim.log.levels.WARN)
 			return
@@ -433,7 +433,7 @@ function M.Remove(MakefilePath ,Content)
 			return
 		end
 
-	end, { ptrompt_title = "Select target(s) to remove" })
+	end, { ptrompt_title = "Select target(s) to remove",  previewer = picker.text_per_entry_previewer("make") })
 end
 
 function M.RunMake(Arg)

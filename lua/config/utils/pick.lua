@@ -8,6 +8,36 @@ end
 
 M.available = true
 
+local previewers = require("telescope.previewers")
+
+function M.text_per_entry_previewer(lang)
+  return previewers.new_buffer_previewer({
+    define_preview = function(self, entry)
+      local lines = {}
+
+      if entry.preview_text then
+        if type(entry.preview_text) == "table" then
+          for _, line in ipairs(entry.preview_text) do
+            table.insert(lines, tostring(line))
+          end
+        elseif type(entry.preview_text) == "string" then
+          for line in entry.preview_text:gmatch("([^\n]*)\n?") do
+            table.insert(lines, line)
+          end
+        else
+          table.insert(lines, "Invalid preview_text type")
+        end
+      else
+        table.insert(lines, "No preview available")
+      end
+
+      vim.api.nvim_buf_set_lines(self.state.bufnr, 0, -1, false, lines)
+      vim.api.nvim_set_option_value('filetype',lang or"lua",{buf = self.state.bufnr})
+    end,
+  })
+end
+
+
 local finders = require("telescope.finders")
 local conf = require("telescope.config").values
 local actions = require("telescope.actions")
@@ -273,8 +303,17 @@ end
 function M.pick_multi_with_preview(entries, callback, opts)
 	opts = opts or {}
 	opts.previewer = opts.previewer or conf.file_previewer(opts)
+	opts.entry_maker = opts.entry_maker or function(entry)
+		return {
+			value = entry.value,
+			display = entry.display or entry.value,
+			ordinal = entry.display or entry.value,
+			preview_text = entry.preview_text,
+		}
+	end
 	return M.pick_multi(entries, callback, opts)
 end
+
 
 function M.pick_entries(entries, callback, opts)
 	return M.pick_multi(entries, callback, opts)
