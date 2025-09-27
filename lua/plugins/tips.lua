@@ -1,6 +1,7 @@
 return {
 	"saxon1964/neovim-tips",
 	version = "*", -- Only update on tagged releases
+  cmd = "NeovimTips",
 	dependencies = {
 		"MunifTanjim/nui.nvim",
 		"MeanderingProgrammer/render-markdown.nvim",

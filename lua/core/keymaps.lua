@@ -124,4 +124,4 @@ end, { desc = "Toggle vari" })
 
 map("n", "<S-Tab>", "<cmd>bprev!<CR>", { silent = true, desc = "Previous buffer" })
 map("n", "<Tab>", "<cmd>bnext!<CR>", { silent = true, desc = "Next buffer" })
-map("n", "<leader>bd", "<cmd>bdelete!<CR>", { silent = true, desc = "Delete buffer" })
+-- map("n", "<leader>bd", "<cmd>bdelete!<CR>", { silent = true, desc = "Delete buffer" })

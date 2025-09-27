@@ -179,7 +179,6 @@ function M.RunTarget(MakefilePath, FilePath, Content)
 	local Cmd = "cd " .. vim.fn.shellescape(MakefileDir) .. " && make " .. RunTargetName
 
 	vim.cmd("terminal " .. Cmd)
-	vim.notify("Running target: " .. RunTargetName, vim.log.levels.INFO)
 	return true
 end
 
@@ -304,10 +303,6 @@ function M.EditTarget(MakefilePath, FilePath, RootPath, Content, Entries, callba
 		for i = 1, markerInfo.M_start - 1 do
 			table.insert(NewLines, Lines[i])
 		end
-		for i = markerInfo.M_start, markerInfo.M_end do
-			print(i .. " -Removing line: " .. Lines[i])
-		end
-
 		for i = markerInfo.M_end + 1, #Lines do
 			table.insert(NewLines, Lines[i])
 		end
@@ -482,8 +477,6 @@ function M.RunMake(Arg)
 		return false
 	end
 
-	vim.notify("Found project in: " .. Root.Path .. " (marker: " .. Root.Marker .. ")", vim.log.levels.INFO)
-
 	if Arg == "add" then
 		M.AddToMakefile(MakefilePath, CurrentFile, Root.Path, MakefileContent)
 	elseif Arg == "edit" then
@@ -494,10 +487,10 @@ function M.RunMake(Arg)
 		M.PickAndRunTargets(MakefileContent)
 	elseif Arg == "edit_all" then
 		M.EditAllTargets(MakefilePath, Root.Path, MakefileContent)
-	elseif Arg == "Dev" then
+	elseif Arg == "remove" then
 		M.Remove(MakefilePath,MakefileContent)
 	else
-		vim.notify("Unknown command: " .. Arg .. ". Use: add, edit, run, or open", vim.log.levels.WARN)
+		vim.notify("Unknown command", vim.log.levels.WARN)
 	end
 end
 

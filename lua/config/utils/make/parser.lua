@@ -54,7 +54,6 @@ function Parser.FindMarker(Content, RelativePath, CheckStart, CheckEnd)
 		end
 		if not info.M_start and CheckStart then
 			if trimmedLine:match("^%s*#%s*marker_start%s*:%s*" .. escapedPath) then
-				print("Start marker at line " .. lineNumber .. " with text: " .. trimmedLine)
 				info.M_start = lineNumber
 				if not CheckEnd then
 					return info
@@ -63,7 +62,6 @@ function Parser.FindMarker(Content, RelativePath, CheckStart, CheckEnd)
 		end
 		if not info.M_end and info.M_start and CheckEnd then
 			if trimmedLine:match("^%s*#%s*marker_end%s*:%s*" .. escapedPath) then
-				print("Found End marker at line " .. lineNumber .. " with text: " .. trimmedLine)
 				info.M_end = lineNumber
 				return info
 			end
@@ -342,34 +340,34 @@ end
 function Parser.PrintAnalysisSummary(Content)
 	local allSections = Parser.AnalyzeAllSections(Content)
 
-	print("Makefile Section Analysis:")
-	print("=" .. string.rep("=", 50))
+	vim.notify("Makefile Section Analysis:")
+	vim.notify("=" .. string.rep("=", 50))
 
 	for _, section in ipairs(allSections) do
 		local analysis = section.analysis
-		print(string.format("Path: %s", section.path))
-		print(string.format("Base Name: %s", section.baseName or "N/A"))
-		print(string.format("Type: %s", analysis.type))
-		print(string.format("Has Object: %s", analysis.hasObj and "Yes" or "No"))
-		print(string.format("Has Executable: %s", analysis.hasExecutable and "Yes" or "No"))
-		print(string.format("Has Run: %s", analysis.hasRun and "Yes" or "No"))
+		vim.notify(string.format("Path: %s", section.path))
+		vim.notify(string.format("Base Name: %s", section.baseName or "N/A"))
+		vim.notify(string.format("Type: %s", analysis.type))
+		vim.notify(string.format("Has Object: %s", analysis.hasObj and "Yes" or "No"))
+		vim.notify(string.format("Has Executable: %s", analysis.hasExecutable and "Yes" or "No"))
+		vim.notify(string.format("Has Run: %s", analysis.hasRun and "Yes" or "No"))
 
 		if #analysis.targets > 0 then
-			print("Targets:")
+			vim.notify("Targets:")
 			for _, target in ipairs(analysis.targets) do
-				print(string.format("  - %s", target.name))
+				vim.notify(string.format("  - %s", target.name))
 				if #target.dependencies > 0 then
-					print(string.format("    Dependencies: %s", table.concat(target.dependencies, ", ")))
+					vim.notify(string.format("    Dependencies: %s", table.concat(target.dependencies, ", ")))
 				end
 				if #target.recipe > 0 then
-					print("    Recipe:")
+					vim.notify("    Recipe:")
 					for _, recipeLine in ipairs(target.recipe) do
-						print(string.format("      %s", recipeLine))
+						vim.notify(string.format("      %s", recipeLine))
 					end
 				end
 			end
 		end
-		print(string.rep("-", 50))
+		vim.notify(string.rep("-", 50))
 	end
 end
 

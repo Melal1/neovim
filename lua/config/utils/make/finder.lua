@@ -38,7 +38,7 @@ function Finder.FindRoot(StartingPoint, MaxSearchLevels, RootMarkers)
 	return nil, "No project root found within " .. MaxSearchLevels .. " levels"
 end
 
-  function Finder.FindHeaderDirectory(Basename, RootPath)
+function Finder.FindHeaderDirectory(Basename, RootPath)
 	local HeaderName = Basename .. ".h"
 
 	-- Search recursively from root directory for the header file
@@ -48,7 +48,6 @@ end
 		.. " -name "
 		.. vim.fn.shellescape(HeaderName)
 		.. " -type f"
-  print(SearchCmd)
 	local FindResult = vim.fn.system(SearchCmd)
 
 	if vim.v.shell_error ~= 0 or FindResult == "" then
@@ -57,7 +56,6 @@ end
 
 	-- Take the first match if multiple headers found
 	local HeaderPath = vim.trim(vim.split(FindResult, "\n")[1])
-  print("found : " ..HeaderPath, FindResult)
 	local HeaderDir = vim.fn.fnamemodify(HeaderPath, ":h")
 
 	-- Convert to relative path from root

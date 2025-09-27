@@ -2,8 +2,8 @@ return {
 	{
 		"nvim-telescope/telescope.nvim",
 		tag = "0.1.8",
-		-- Remove event, use cmd or keys to lazy-load
 		cmd = "Telescope",
+		event = { "BufReadPost" },
 		-- Looks messy btw , but this is a simple solution
 		keys = {
 			{

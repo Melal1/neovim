@@ -26,10 +26,13 @@ vim.opt.smartindent = true
 vim.opt.shiftwidth = 2 -- indent = 2 spaces
 vim.opt.number = true -- show line numbers
 vim.opt.relativenumber = true -- show relative numbers
+vim.opt.cursorlineopt = "number"
+vim.opt.cursorline = true
 vim.opt.updatetime = 50
 vim.opt.undofile = true -- persistent undo history
 vim.opt.updatetime = 50 -- faster cursorhold events
 vim.opt.nu = true
+vim.o.shada = "'100,<50,s10,h"
 
 -- ========================================
 -- visual settings

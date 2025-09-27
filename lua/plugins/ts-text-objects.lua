@@ -1,7 +1,7 @@
 return {
 	"nvim-treesitter/nvim-treesitter-textobjects",
 	branch = "main",
-	config = function()
+	init = function()
 		require("nvim-treesitter-textobjects").setup({
 			select = {
 				-- Automatically jump forward to textobj, similar to targets.vim
@@ -36,6 +36,33 @@ return {
 		})
 
 		-- Select
+		vim.keymap.set({ "x", "o" }, "ar", function()
+			require("nvim-treesitter-textobjects.select").select_textobject("@return.outer", "textobjects")
+		end)
+		vim.keymap.set({ "x", "o" }, "ir", function()
+			require("nvim-treesitter-textobjects.select").select_textobject("@return.inner", "textobjects")
+		end)
+		vim.keymap.set({ "x", "o" }, "in", function()
+			require("nvim-treesitter-textobjects.select").select_textobject("@number.inner", "textobjects")
+		end)
+		vim.keymap.set({ "x", "o" }, "ai", function()
+			require("nvim-treesitter-textobjects.select").select_textobject("@loop.outer", "textobjects")
+		end)
+		vim.keymap.set({ "x", "o" }, "io", function()
+			require("nvim-treesitter-textobjects.select").select_textobject("@loop.inner", "textobjects")
+		end)
+		vim.keymap.set({ "x", "o" }, "i=", function()
+			require("nvim-treesitter-textobjects.select").select_textobject("@assignment.rhs", "textobjects")
+		end)
+		vim.keymap.set({ "x", "o" }, "i-", function()
+			require("nvim-treesitter-textobjects.select").select_textobject("@assignment.lhs", "textobjects")
+		end)
+		vim.keymap.set({ "x", "o" }, "a=", function()
+			require("nvim-treesitter-textobjects.select").select_textobject("@assignment.rhs", "textobjects")
+		end)
+		vim.keymap.set({ "x", "o" }, "a-", function()
+			require("nvim-treesitter-textobjects.select").select_textobject("@assignment.lhs", "textobjects")
+		end)
 		vim.keymap.set({ "x", "o" }, "am", function()
 			require("nvim-treesitter-textobjects.select").select_textobject("@call.outer", "textobjects")
 		end)
@@ -63,15 +90,22 @@ return {
 		vim.keymap.set({ "x", "o" }, "as", function()
 			require("nvim-treesitter-textobjects.select").select_textobject("@local.scope", "locals")
 		end)
+		vim.keymap.set({"o" , "x"}, "aa", function()
+			require("nvim-treesitter-textobjects.select").select_textobject("@parameter.outer")
+		end)
+		vim.keymap.set({"o" , "x"}, "ia", function()
+			require("nvim-treesitter-textobjects.select").select_textobject("@parameter.inner")
+		end)
 
 		-- Swap
 		vim.keymap.set("n", "<leader>=a", function()
 			require("nvim-treesitter-textobjects.swap").swap_next("@parameter.inner")
 		end)
 		vim.keymap.set("n", "<leader>=f", function()
+
 			require("nvim-treesitter-textobjects.swap").swap_next("@function.outer")
 		end)
-		vim.keymap.set("n", "<leader>=a", function()
+		vim.keymap.set("n", "<leader>=A", function()
 			require("nvim-treesitter-textobjects.swap").swap_previous("@parameter.inner")
 		end)
 		vim.keymap.set("n", "<leader>=F", function()
@@ -86,7 +120,10 @@ return {
 			require("nvim-treesitter-textobjects.move").goto_next_start("@class.outer", "textobjects")
 		end)
 		-- You can also pass a list to group multiple queries.
-		vim.keymap.set({ "n", "x", "o" }, "]o", function()
+		vim.keymap.set({ "n", "x", "o" }, "]l", function()
+			require("nvim-treesitter-textobjects.move").goto_next_start({ "@loop.inner", "@loop.outer" }, "textobjects")
+		end)
+		vim.keymap.set({ "n", "x", "o" }, "[l", function()
 			require("nvim-treesitter-textobjects.move").goto_next_start({ "@loop.inner", "@loop.outer" }, "textobjects")
 		end)
 		-- You can also use captures from other query groups like `locals.scm` or `folds.scm`
@@ -126,8 +163,8 @@ return {
 		end)
 
 		-- Repeat
-		--   local ts_repeat_move = require "nvim-treesitter-textobjects.repeatable_move"
-		-- vim.keymap.set({ "n", "x", "o" }, ";", ts_repeat_move.repeat_last_move)
-		-- vim.keymap.set({ "n", "x", "o" }, ",", ts_repeat_move.repeat_last_move_opposite)
+		  local ts_repeat_move = require "nvim-treesitter-textobjects.repeatable_move"
+		vim.keymap.set({ "n", "x", "o" }, "<leader>;", ts_repeat_move.repeat_last_move)
+		vim.keymap.set({ "n", "x", "o" }, "<leader>,", ts_repeat_move.repeat_last_move_opposite)
 	end,
 }

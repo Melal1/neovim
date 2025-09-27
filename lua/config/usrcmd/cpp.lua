@@ -2,6 +2,7 @@ vim.api.nvim_create_autocmd("FileType", {
 	pattern = "cpp",
 	callback = function()
 		vim.keymap.set("n", "<leader>rm", "<cmd>RunMake add<CR>", { desc = "Add file to Makefile" })
+    vim.keymap.set("n", "<leader>rf","<cmd>RunMake run<CR>")
 
 		vim.api.nvim_create_user_command("RunMake", function(opts)
 			if not opts.args or opts.args == "" then
@@ -12,7 +13,7 @@ vim.api.nvim_create_autocmd("FileType", {
 		end, {
 			nargs = 1,
 			complete = function()
-				return { "add", "edit", "run", "open","edit_all","tasks"}
+				return { "add", "edit", "run", "open","edit_all","remove","tasks"}
 			end,
 		})
 	end,
