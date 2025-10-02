@@ -1,7 +1,35 @@
 return {
 	"linrongbin16/lsp-progress.nvim",
-  event = "BufRead",
+	event = "BufRead",
 	config = function()
+		local sorted_clients = nil
+		local copilot_name = nil
+
+		vim.api.nvim_create_autocmd({ "LspAttach", "LspDetach" }, {
+			callback = function(args)
+				sorted_clients = nil
+				if args.data and args.data.client_id then
+					local client = vim.lsp.get_client_by_id(args.data.client_id)
+					if copilot_name == nil and client and client.name == "copilot" then
+						local funny_names = {
+							"Gamemode 1",
+							"Creative",
+							"EasyMode",
+							"Spectator",
+							"Herobrine",
+							"Villager",
+							"Redstone",
+							"Code Spawner",
+							"No Xp",
+							"Copilot",
+							"",
+						}
+						copilot_name = funny_names[math.random(#funny_names)]
+					end
+				end
+			end,
+		})
+
 		require("lsp-progress").setup({
 			spinner = { "⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏" },
 			decay = 200,
@@ -29,36 +57,40 @@ return {
 			end,
 
 			format = function(client_messages)
-				local lsp_clients = vim.lsp.get_clients()
-				local messages_map = {}
+				if not sorted_clients then
+					local clients = vim.lsp.get_clients()
+					table.sort(clients, function(a, b)
+						return a.name < b.name
+					end)
+					sorted_clients = clients
+				end
 
+				local messages_map = {}
 				for _, climsg in ipairs(client_messages) do
 					messages_map[climsg.name] = climsg.body
 				end
 
-				if #lsp_clients > 0 then
-					table.sort(lsp_clients, function(a, b)
-						return a.name < b.name
-					end)
+				local builder = {}
+				local seen = {}
 
-					local builder = {}
-					local seen = {}
-
-					for _, cli in ipairs(lsp_clients) do
-						if not seen[cli.name] then
-							local msg = messages_map[cli.name]
-							if msg then
-								table.insert(builder, string.format("[%s] %s", cli.name, msg))
-							else
-								table.insert(builder, string.format("[%s]", cli.name))
-							end
-							seen[cli.name] = true
+				for _, cli in ipairs(sorted_clients) do
+					if not seen[cli.name] then
+						local display_name = cli.name
+						if cli.name == "copilot" and copilot_name then
+							display_name = copilot_name
 						end
-					end
 
-					return table.concat(builder, " ")
+						local msg = messages_map[cli.name]
+						if msg then
+							table.insert(builder, string.format("[%s] %s", display_name, msg))
+						else
+							table.insert(builder, string.format("[%s]", display_name))
+						end
+						seen[cli.name] = true
+					end
 				end
-				return ""
+
+				return table.concat(builder, " ")
 			end,
 		})
 	end,

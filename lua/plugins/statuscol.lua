@@ -1,6 +1,6 @@
 return {
 	"luukvbaal/statuscol.nvim",
-  event = { "BufReadPre","BufNewFile" },
+	event = { "BufReadPre", "BufNewFile" },
 	config = function()
 		vim.o.numberwidth = 3
 		vim.api.nvim_set_hl(0, "CursorLineNr", { fg = "#cdcdcd", bg = "NONE", bold = true })
@@ -8,6 +8,17 @@ return {
 		require("statuscol").setup({
 			relculright = true,
 			segments = {
+				{
+					sign = {
+						name = {"Dap"},
+						maxwidth = 1,
+						colwidth = 1,
+						auto = "",
+						wrap = true,
+						foldclosed = true,
+					},
+				},
+
 				{
 					sign = {
 						namespace = { "diagnostic", "gitsigns_signs_" },
