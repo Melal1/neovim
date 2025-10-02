@@ -18,83 +18,60 @@ function Generator.GenerateMakefileVariables(MakefileVars)
 end
 
 function Generator.ObjectTarget(Basename, RelativePath, MakefileVars)
-	local ObjName = Basename .. ".o"
+	local ObjName = "$(BUILD_DIR)/" .. Basename .. ".o"
 	local CompilerVar = MakefileVars.CC and "$(CC)" or "$(CXX)"
 	local FlagsVar = MakefileVars.CFLAGS and "$(CFLAGS)" or "$(CXXFLAGS)"
 
 	return {
-    "#marker_start: " ..RelativePath,
     "",
+		"# marker_start: " .. RelativePath .. " type:obj",
 		ObjName .. ": " .. RelativePath,
-		"\t" .. CompilerVar .. " " .. FlagsVar .. " -c " .. RelativePath .. " -o $(BUILD_DIR)/" .. ObjName,
-		"",
-    "#marker_end: " ..RelativePath,
-    "",
+		"\t" .. CompilerVar .. " " .. FlagsVar .. " -c $< -o $@",
+		"# marker_end: " .. RelativePath,
 	}
 end
 
 function Generator.ExecutableTarget(Basename, RelativePath, Dependencies, MakefileVars, RootPath)
 	Dependencies = Dependencies or {}
-	local ObjName = Basename .. ".o"
-	local ExeName = Basename
+	local ObjName = "$(BUILD_DIR)/" .. Basename .. ".o"
+	local ExeName = "$(BUILD_DIR)/" .. Basename
 	local CompilerVar = MakefileVars.CC and "$(CC)" or "$(CXX)"
 	local FlagsVar = MakefileVars.CFLAGS and "$(CFLAGS)" or "$(CXXFLAGS)"
 
-	local DepsStr = ""
-	local LinkDepsStr = ""
-	local UnFoiundIncludePath = {}
+	local LinkDeps = {}
 	local Include = {}
-	local IncludeStr = ""
+	local UnFoundIncludePath = {}
 
-	if #Dependencies > 0 then
-		DepsStr = table.concat(Dependencies, " ") .. " "
-
-		local PrefixedDeps = {}
-		for _, Dep in ipairs(Dependencies) do
-			table.insert(PrefixedDeps, "$(BUILD_DIR)/" .. Dep)
-			local IncludePath = Finder.FindHeaderDirectory(vim.fn.fnamemodify(Dep, ":t:r"), RootPath)
-			if IncludePath then
-				table.insert(Include, "-I" .. IncludePath)
-			else
-				table.insert(UnFoiundIncludePath, Dep)
-			end
+	for _, Dep in ipairs(Dependencies) do
+		table.insert(LinkDeps, Dep)
+		local IncludePath = Finder.FindHeaderDirectory(vim.fn.fnamemodify(Dep, ":t:r"), RootPath)
+		if IncludePath then
+			table.insert(Include, "-I" .. IncludePath)
+		else
+			table.insert(UnFoundIncludePath, Dep)
 		end
-		LinkDepsStr = table.concat(PrefixedDeps, " ") .. " "
-		IncludeStr = table.concat(Include, " ") .. " "
 	end
 
-	if #UnFoiundIncludePath > 0 then
-		return nil, UnFoiundIncludePath
+	if #UnFoundIncludePath > 0 then
+		return nil, UnFoundIncludePath
 	end
+
+	local IncludeStr = table.concat(Include, " ")
+	local LinkDepsStr = table.concat(LinkDeps, " ")
 
 	return true,
 		{
-			"#marker_start: " .. RelativePath,
-      "",
+			"",
+			"# marker_start: " .. RelativePath .. " type:full",
 			ObjName .. ": " .. RelativePath,
-			"\t"
-				.. CompilerVar
-				.. " "
-				.. FlagsVar
-				.. " -c "
-				.. RelativePath
-				.. " -o $(BUILD_DIR)/"
-				.. ObjName
-				.. " "
-				.. IncludeStr,
+			"\t" .. CompilerVar .. " " .. FlagsVar .. " " .. IncludeStr .. " -c $< -o $@",
 			"",
-
-			ExeName .. ": " .. DepsStr .. ObjName,
-			"\t" .. CompilerVar .. " $(BUILD_DIR)/" .. ObjName .. " " .. LinkDepsStr .. "-o $(BUILD_DIR)/" .. ExeName,
+			ExeName .. ": " .. ObjName .. (LinkDepsStr ~= "" and " " .. LinkDepsStr or ""),
+			"\t" .. CompilerVar .. " $^ -o $@",
 			"",
-
-			"run" .. ExeName .. ": " .. ExeName,
-			"\t$(BUILD_DIR)/" .. ExeName,
-			"",
-
-      "#marker_end: " .. RelativePath,
-      "",
-
+			"run" .. Basename .. ": " .. ExeName,
+			"\t" .. ExeName,
+			"# marker_end: " .. RelativePath,
 		}
 end
 
