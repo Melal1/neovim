@@ -2,7 +2,7 @@ local map = vim.keymap.set
 
 -- Expermintal
 map("n", "<leader>rm", function()
-	require("config.utils.make").RunMake()
+	require("config.utils.make").Make()
 end)
 
 map("n", "<C-q>", "<cmd>wqa!<CR>")

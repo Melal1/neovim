@@ -33,7 +33,7 @@ function Parser.HasReqVars(Content, MakefileVars)
 end
 
 function Parser.FindMarker(Content, RelativePath, CheckStart, CheckEnd)
-	local info = { M_start = nil, M_end = nil }
+	local info = { M_start = nil, M_end = nil, type = nil }
 	local escapedPath = Utils.EscapePattern(RelativePath)
 	local lineNumber = 0
 	if not CheckStart then
@@ -53,8 +53,14 @@ function Parser.FindMarker(Content, RelativePath, CheckStart, CheckEnd)
 			goto continue
 		end
 		if not info.M_start and CheckStart then
-			if trimmedLine:match("^%s*#%s*marker_start%s*:%s*" .. escapedPath) then
+			local markerMatch = trimmedLine:match("^%s*#%s*marker_start%s*:%s*" .. escapedPath .. "(.*)$")
+			if markerMatch then
 				info.M_start = lineNumber
+				-- Extract type if present
+				local typeAnnotation = markerMatch:match("%s+type:(%S+)")
+				if typeAnnotation then
+					info.type = typeAnnotation
+				end
 				if not CheckEnd then
 					return info
 				end
@@ -82,18 +88,22 @@ function Parser.FindAllMarkerPairs(Content)
 		lineNumber = lineNumber + 1
 		local trimmedLine = line:match("^%s*(.-)%s*$")
 		if trimmedLine:match("^%s*#") then
-			local startPath = trimmedLine:match("^%s*#%s*marker_start%s*:%s*(.*)$")
-			if startPath then
-				openMarkers[startPath] = lineNumber
+			local startMatch = trimmedLine:match("^%s*#%s*marker_start%s*:%s*(.*)$")
+			if startMatch then
+				local path = startMatch:match("^(%S+)")
+				local typeAnnotation = startMatch:match("%s+type:(%S+)")
+				openMarkers[path] = { line = lineNumber, type = typeAnnotation }
 			end
 			local endPath = trimmedLine:match("^%s*#%s*marker_end%s*:%s*(.*)$")
 			if endPath then
-				local startLine = openMarkers[endPath]
-				if startLine then
+				endPath = endPath:match("^(%S+)")
+				local markerData = openMarkers[endPath]
+				if markerData then
 					table.insert(allPairs, {
 						path = endPath,
-						StartLine = startLine,
+						StartLine = markerData.line,
 						EndLine = lineNumber,
+						annotatedType = markerData.type,
 					})
 					openMarkers[endPath] = nil
 				end
@@ -120,8 +130,7 @@ function Parser.ReadContentBetweenLines(Content, StartLine, EndLine, ReturnTable
 end
 
 function Parser.ReadContentBetweenMarkers(Content, RelativePath, ReturnTable)
-	--| ReturnTable = (ReturnTable ~= false and ReturnTable ~= nil)
-	ReturnTable = not not ReturnTable --| Same as up
+	ReturnTable = not not ReturnTable
 	local contentLines = {}
 	local currentLineNumber = 0
 	local markerInfo = Parser.FindMarker(Content, RelativePath, true, true)
@@ -142,11 +151,11 @@ function Parser.ReadContentBetweenMarkers(Content, RelativePath, ReturnTable)
 	return table.concat(contentLines, "\n")
 end
 
-function Parser.TargetExists(Content, TargetName)
+function Parser.TargetExists(Content, RelativePath)
 	if not Content then
 		return false
 	end
-	local markerInfo = Parser.FindMarker(Content, TargetName, true, false)
+	local markerInfo = Parser.FindMarker(Content, RelativePath, true, false)
 	return markerInfo.M_start ~= nil
 end
 
@@ -206,7 +215,98 @@ function Parser.ParseTarget(sectionContent, targetName)
 	return target
 end
 
-function Parser.AnalyzeSection(sectionContent, baseName)
+function Parser.DetectTargetTypes(sectionContent, baseName, annotatedType)
+	local hasObj = false
+	local hasExecutable = false
+	local hasRun = false
+
+	-- Determine what to search for based on annotated type
+	local searchFor = {
+		obj = true,
+		executable = true,
+		run = true,
+	}
+
+	if annotatedType then
+		-- Only search for targets relevant to the annotated type
+		searchFor = {
+			obj = false,
+			executable = false,
+			run = false,
+		}
+
+		if annotatedType == "full" then
+			searchFor.obj = true
+			searchFor.executable = true
+			searchFor.run = true
+		elseif annotatedType == "executable" then
+			searchFor.obj = true
+			searchFor.executable = true
+		elseif annotatedType == "obj" then
+			searchFor.obj = true
+		elseif annotatedType == "run" then
+			searchFor.run = true
+		end
+	end
+
+	for line in sectionContent:gmatch("[^\n]+") do
+		local trimmedLine = line:match("^%s*(.-)%s*$")
+
+		if trimmedLine == "" or trimmedLine:match("^#") then
+			goto continue
+		end
+
+		local targetName = trimmedLine:match("^([^:]+):")
+		if targetName then
+			targetName = targetName:match("^%s*(.-)%s*$")
+
+			-- Check for object file (ends with .o or contains .o in path)
+			if searchFor.obj and not hasObj then
+				if targetName:match("%.o$") or targetName:match("%.o%s*$") then
+					hasObj = true
+				end
+			end
+
+			-- Check for executable (matches baseName exactly or ends with baseName)
+			if searchFor.executable and not hasExecutable then
+				if
+					baseName
+					and (targetName == baseName or targetName:match("/" .. Utils.EscapePattern(baseName) .. "$"))
+				then
+					hasExecutable = true
+				end
+			end
+
+			-- Check for run target
+			if searchFor.run and not hasRun then
+				if
+					baseName
+					and (
+						targetName == "run" .. baseName
+						or targetName:match("/run" .. Utils.EscapePattern(baseName) .. "$")
+					)
+				then
+					hasRun = true
+				end
+			end
+
+			-- Early exit if we found everything we're looking for
+			if
+				(not searchFor.obj or hasObj)
+				and (not searchFor.executable or hasExecutable)
+				and (not searchFor.run or hasRun)
+			then
+				break
+			end
+		end
+
+		::continue::
+	end
+
+	return hasObj, hasExecutable, hasRun
+end
+
+function Parser.AnalyzeSection(sectionContent, baseName, annotatedType)
 	if not sectionContent or sectionContent == "" then
 		return {
 			hasObj = false,
@@ -214,12 +314,11 @@ function Parser.AnalyzeSection(sectionContent, baseName)
 			hasRun = false,
 			type = "empty",
 			targets = {},
+			valid = true,
+			error = nil,
 		}
 	end
 
-	local hasObj = false
-	local hasExecutable = false
-	local hasRun = false
 	local targets = {}
 
 	if not baseName then
@@ -227,6 +326,7 @@ function Parser.AnalyzeSection(sectionContent, baseName)
 		baseName = baseName:gsub("%.cpp$", "")
 	end
 
+	-- Parse all targets
 	for line in sectionContent:gmatch("[^\n]+") do
 		local trimmedLine = line:match("^%s*(.-)%s*$")
 
@@ -242,38 +342,78 @@ function Parser.AnalyzeSection(sectionContent, baseName)
 			if targetInfo.found then
 				table.insert(targets, targetInfo)
 			end
-
-			if targetName:match("%.o$") then
-				hasObj = true
-			elseif targetName == baseName then
-				hasExecutable = true
-			elseif targetName == "run" .. baseName then
-				hasRun = true
-			end
 		end
 
 		::continue::
 	end
 
-	local targetType
+	-- Detect what types of targets exist
+	local hasObj, hasExecutable, hasRun = Parser.DetectTargetTypes(sectionContent, baseName)
+
+	-- Determine inferred type
+	local inferredType
 	if hasObj and hasExecutable and hasRun then
-		targetType = "full"
+		inferredType = "full"
 	elseif hasObj and hasExecutable then
-		targetType = "executable"
+		inferredType = "executable"
 	elseif hasObj then
-		targetType = "obj"
+		inferredType = "obj"
 	elseif hasRun then
-		targetType = "run"
+		inferredType = "run"
 	else
-		targetType = "unknown"
+		inferredType = "unknown"
+	end
+
+	-- Validation logic
+	local valid = true
+	local error = nil
+
+	if annotatedType then
+		-- Type was specified in marker, validate it
+		local expectedTargets = {}
+
+		if annotatedType == "full" then
+			expectedTargets = { "obj", "executable", "run" }
+		elseif annotatedType == "executable" then
+			expectedTargets = { "obj", "executable" }
+		elseif annotatedType == "obj" then
+			expectedTargets = { "obj" }
+		elseif annotatedType == "run" then
+			expectedTargets = { "run" }
+		end
+
+		-- Check if expected targets exist
+		local missingTargets = {}
+		for _, expected in ipairs(expectedTargets) do
+			if expected == "obj" and not hasObj then
+				table.insert(missingTargets, "object file (.o)")
+			elseif expected == "executable" and not hasExecutable then
+				table.insert(missingTargets, "executable")
+			elseif expected == "run" and not hasRun then
+				table.insert(missingTargets, "run target")
+			end
+		end
+
+		if #missingTargets > 0 then
+			valid = false
+			error = string.format(
+				"Type mismatch: marker specifies type '%s' but missing: %s",
+				annotatedType,
+				table.concat(missingTargets, ", ")
+			)
+		end
+
 	end
 
 	return {
 		hasObj = hasObj,
 		hasExecutable = hasExecutable,
 		hasRun = hasRun,
-		type = targetType,
+		type = inferredType,
 		targets = targets,
+		valid = valid,
+		error = error,
+		annotatedType = annotatedType,
 	}
 end
 
@@ -289,15 +429,21 @@ function Parser.AnalyzeAllSections(Content)
 			baseName = baseName:gsub("%.cpp$", "")
 		end
 
-		local analysis = Parser.AnalyzeSection(sectionContent, baseName)
+		local analysis = Parser.AnalyzeSection(sectionContent, baseName, pair.annotatedType)
 
-		table.insert(sectionAnalysis, {
-			path = pair.path,
-			baseName = baseName,
-			startLine = pair.StartLine,
-			endLine = pair.EndLine,
-			analysis = analysis,
-		})
+		-- Only add valid sections to the list, but track invalid ones for error reporting
+		if analysis.valid then
+			table.insert(sectionAnalysis, {
+				path = pair.path,
+				baseName = baseName,
+				startLine = pair.StartLine,
+				endLine = pair.EndLine,
+				analysis = analysis,
+			})
+		else
+			-- Print error for invalid section
+			vim.notify(string.format("ERROR in section '%s': %s", pair.path, analysis.error), vim.log.levels.ERROR)
+		end
 	end
 
 	return sectionAnalysis
@@ -316,27 +462,6 @@ function Parser.GetSectionsByType(Content, targetType)
 	return filteredSections
 end
 
-function Parser.GetExecutableDetails(Content, executableName)
-	local allSections = Parser.AnalyzeAllSections(Content)
-
-	for _, section in ipairs(allSections) do
-		if section.baseName == executableName then
-			for _, target in ipairs(section.analysis.targets) do
-				if target.name == executableName and not target.name:match("%.o$") then
-					return {
-						name = target.name,
-						dependencies = target.dependencies,
-						recipe = target.recipe,
-						section = section,
-					}
-				end
-			end
-		end
-	end
-
-	return nil
-end
-
 function Parser.PrintAnalysisSummary(Content)
 	local allSections = Parser.AnalyzeAllSections(Content)
 
@@ -348,6 +473,11 @@ function Parser.PrintAnalysisSummary(Content)
 		vim.notify(string.format("Path: %s", section.path))
 		vim.notify(string.format("Base Name: %s", section.baseName or "N/A"))
 		vim.notify(string.format("Type: %s", analysis.type))
+
+		if analysis.annotatedType then
+			vim.notify(string.format("Annotated Type: %s", analysis.annotatedType))
+		end
+
 		vim.notify(string.format("Has Object: %s", analysis.hasObj and "Yes" or "No"))
 		vim.notify(string.format("Has Executable: %s", analysis.hasExecutable and "Yes" or "No"))
 		vim.notify(string.format("Has Run: %s", analysis.hasRun and "Yes" or "No"))
@@ -372,3 +502,24 @@ function Parser.PrintAnalysisSummary(Content)
 end
 
 return Parser
+
+--[[ function Parser.GetExecutableDetails(Content, executableName)
+	local allSections = Parser.AnalyzeAllSections(Content)
+
+	for _, section in ipairs(allSections) do
+		if section.baseName == executableName then
+			for _, target in ipairs(section.analysis.targets) do
+				if target.name == executableName and not target.name:match("%.o$") then
+					return {
+						name = target.name,
+						dependencies = target.dependencies,
+						recipe = target.recipe,
+						section = section,
+					}
+				end
+			end
+		end
+	end
+
+	return nil
+end ]]

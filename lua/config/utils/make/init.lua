@@ -12,28 +12,25 @@ function M.Setup(UserConfig)
 	M.Config = vim.tbl_deep_extend("force", M.Config, UserConfig or {})
 end
 
-local function TargetExists(Content, targetName)
-	local allSections = Parser.AnalyzeAllSections(Content)
-	for _, section in ipairs(allSections) do
-		for _, target in ipairs(section.analysis.targets) do
-			if target.name == targetName then
-				return true
-			end
-		end
+local function TargetExists(Content, RelativePath)
+	if Parser.TargetExists(Content, RelativePath) then
+		return true
 	end
 	return false
 end
 
-local function GetObjectTargets(Content)
+local function GetObjectTargetsForPicker(Content)
 	local sections = Parser.GetSectionsByType(Content, "obj")
 	local names = {}
 
-	for _, section in ipairs(sections) do
-		for _, target in ipairs(section.analysis.targets) do
-			table.insert(names, target.name)
+	for _, entry in ipairs(sections) do
+		for _, target in ipairs(entry.analysis.targets) do
+			table.insert(names, {
+				value = target.name,
+				display = entry.baseName .. ".o",
+			})
 		end
 	end
-
 	return names
 end
 
@@ -96,60 +93,59 @@ function M.AddToMakefile(MakefilePath, FilePath, RootPath, Content)
 
 	local Basename = vim.fn.fnamemodify(FilePath, ":t:r")
 
-	local TargetType = vim.fn.input("Target type - [o]bject file or [e]xecutable? [o/e]: ")
+	local TargetType = vim.fn.input("Target type - [o]bject file or [e]xecutable? [o/e]:\n")
 	if TargetType ~= "o" and TargetType ~= "e" then
-		vim.notify("Invalid choice. Must be 'o' or 'e'.", vim.log.levels.WARN)
+		vim.notify("\nInvalid choice. Must be 'o ( Object )' or 'e ( Execuatble )'.", vim.log.levels.WARN)
 		return false
 	end
 
 	if TargetType == "o" then
 		local ObjName = Basename .. ".o"
-		if TargetExists(Content, ObjName) then
-			vim.notify("Object target '" .. ObjName .. "' already exists.", vim.log.levels.INFO)
+		if TargetExists(Content, RelativePath) then
+			vim.notify("\nObject target '" .. ObjName .. "' already exists.", vim.log.levels.INFO)
 			return false
 		end
 
 		local Lines = Generator.ObjectTarget(Basename, RelativePath, M.Config.MakefileVars)
 		local AppendSuccess, WriteErr = Utils.AppendToFile(MakefilePath, Lines)
 		if not AppendSuccess then
-			vim.notify("Failed to write to Makefile: " .. WriteErr, vim.log.levels.ERROR)
+			vim.notify("\nFailed to write to Makefile: " .. WriteErr, vim.log.levels.ERROR)
 			return false
 		end
 
-		vim.notify("Added object target: " .. ObjName, vim.log.levels.INFO)
+		vim.notify("\nAdded object target: " .. ObjName, vim.log.levels.INFO)
 		return true
 	else
-		if TargetExists(Content, Basename) then
-			vim.notify("Executable target '" .. Basename .. "' already exists.", vim.log.levels.INFO)
+		if TargetExists(Content, RelativePath) then
+			vim.notify("\nExecutable target '" .. Basename .. "' already exists.", vim.log.levels.INFO)
 			return false
 		end
 
-		local ObjectFiles = GetObjectTargets(Content)
-
-		local picker = require("config.utils.pick")
-		if not picker.available then
-			vim.notify("Need Telescope for file selection", vim.log.levels.ERROR)
-			return false
-		end
+		local ObjectFiles = GetObjectTargetsForPicker(Content)
 
 		if #ObjectFiles > 0 then
+			local picker = require("config.utils.pick")
+			if not picker.available then
+				vim.notify("\nNeed Telescope for file selection", vim.log.levels.ERROR)
+				return false
+			end
 			picker.pick_checklist(ObjectFiles, function(Selected)
 				local status, Lines =
 					Generator.ExecutableTarget(Basename, RelativePath, Selected, M.Config.MakefileVars, RootPath)
 				if not status then
 					vim.notify(
-						"Failed to generate executable target. Missing include paths for: " .. table.concat(Lines, ", "),
+						"\nFailed to generate executable target. Missing include paths for: " .. table.concat(Lines, ", "),
 						vim.log.levels.ERROR
 					)
 					return
 				end
 				local AppendSuccess, WriteErr = Utils.AppendToFile(MakefilePath, Lines)
 				if not AppendSuccess then
-					vim.notify("Failed to write to Makefile: " .. WriteErr, vim.log.levels.ERROR)
+					vim.notify("\nFailed to write to Makefile: " .. WriteErr, vim.log.levels.ERROR)
 					return
 				end
 				vim.notify(
-					"Added executable target: " .. Basename .. " with " .. #Selected .. " dependencies",
+					"\nAdded executable target: " .. Basename .. " with " .. #Selected .. " dependencies",
 					vim.log.levels.INFO
 				)
 			end, { prompt_title = "Select object file dependencies" })
@@ -157,28 +153,45 @@ function M.AddToMakefile(MakefilePath, FilePath, RootPath, Content)
 			local _, Lines = Generator.ExecutableTarget(Basename, RelativePath, {}, M.Config.MakefileVars, RootPath)
 			local AppendSuccess, WriteErr = Utils.AppendToFile(MakefilePath, Lines)
 			if not AppendSuccess then
-				vim.notify("Failed to write to Makefile: " .. WriteErr, vim.log.levels.ERROR)
+				vim.notify("\nFailed to write to Makefile: " .. WriteErr, vim.log.levels.ERROR)
 				return false
 			end
-			vim.notify("Added standalone executable target: " .. Basename, vim.log.levels.INFO)
+			vim.notify("\nAdded standalone executable target: " .. Basename, vim.log.levels.INFO)
 		end
 		return true
 	end
 end
 
-function M.RunTarget(MakefilePath, FilePath, Content)
-	local Basename = vim.fn.fnamemodify(FilePath, ":t:r")
-	local RunTargetName = "run" .. Basename
+function M.RunTargetInSpilt(MakefilePath, RelativePath, Content)
+	local ok, term = pcall(require, "config.utils.toggleTerm")
+	if not ok then
+		vim.notify("toggleTerm module not found", vim.log.levels.WARN)
+		return
+	end
 
-	if not TargetExists(Content or "", RunTargetName) then
-		vim.notify("No run target found for: " .. Basename, vim.log.levels.WARN)
+	local Targets = GetExeTables(Content)
+	if not Targets or #Targets == 0 then
+		vim.notify("No executable targets found in Makefile", vim.log.levels.WARN)
+		return false
+	end
+
+	local RunTargetName
+	for _, Entry in ipairs(Targets) do
+		if Entry.path == RelativePath then
+			RunTargetName = "run" .. Entry.baseName
+			break
+		end
+	end
+
+	if not RunTargetName then
+		vim.notify("No matching run target for " .. RelativePath, vim.log.levels.WARN)
 		return false
 	end
 
 	local MakefileDir = vim.fn.fnamemodify(MakefilePath, ":h")
-	local Cmd = "cd " .. vim.fn.shellescape(MakefileDir) .. " && make " .. RunTargetName
+	local Cmd = { "cd " .. vim.fn.shellescape(MakefileDir) .. " && clear", " make " .. RunTargetName }
 
-	vim.cmd("terminal " .. Cmd)
+	term.run_cmd(Cmd)
 	return true
 end
 
@@ -261,7 +274,7 @@ function M.EditTarget(MakefilePath, FilePath, RootPath, Content, Entries, callba
 		end
 	end
 
-	local ObjectFiles = GetObjectTargets(Content)
+	local ObjectFiles = GetObjectTargetsForPicker(Content)
 	if not ObjectFiles or #ObjectFiles == 0 then
 		vim.notify("No object files available for dependency selection", vim.log.levels.WARN)
 		if callback then
@@ -366,7 +379,7 @@ function M.EditAllTargets(MakefilePath, RootPath, Content)
 	end, { prompt_title = " Selcet target to edit" })
 end
 
-function M.Remove(MakefilePath ,Content)
+function M.Remove(MakefilePath, Content)
 	local Entries = Parser.AnalyzeAllSections(Content)
 
 	local map = {}
@@ -379,10 +392,11 @@ function M.Remove(MakefilePath ,Content)
 	end
 
 	for _, Entry in ipairs(Entries) do
-		table.insert(
-			PickerEntries,
-			{ value = Entry.startLine, display = Entry.baseName .. " ( " .. Entry.analysis.type .. " )" ,preview_text = Parser.ReadContentBetweenLines(Content,Entry.startLine,Entry.endLine,true)}
-		)
+		table.insert(PickerEntries, {
+			value = Entry.startLine,
+			display = Entry.baseName .. " ( " .. Entry.analysis.type .. " )",
+			preview_text = Parser.ReadContentBetweenLines(Content, Entry.startLine, Entry.endLine, true),
+		})
 		map[Entry.startLine] = Entry
 	end
 
@@ -392,12 +406,28 @@ function M.Remove(MakefilePath ,Content)
 			return
 		end
 
-		local Lines = vim.split(Content, "\n", { plain = true })
+		local Lines = {}
+		for text, nl in Content:gmatch("([^\n]*)(\n?)") do
+			if text ~= "" then
+				if nl ~= "" then
+					text = text .. nl
+				end
+				table.insert(Lines, text)
+			else
+				if nl ~= "" then
+					table.insert(Lines, nl)
+				end
+			end
+		end
 
 		local function RemoveEntry(StartLine, Endline, LinesTable)
 			local NewLines = {}
 			for i = 1, StartLine - 1 do
 				table.insert(NewLines, LinesTable[i])
+			end
+			if LinesTable[StartLine - 1] == "\n" then
+				table.remove(NewLines, StartLine - 1)
+				table.insert(NewLines, "--DELETEME")
 			end
 			for _ = StartLine, Endline do
 				table.insert(NewLines, "--DELETEME")
@@ -409,7 +439,7 @@ function M.Remove(MakefilePath ,Content)
 			return NewLines
 		end
 
-		for _,LineNum in ipairs(selected) do
+		for _, LineNum in ipairs(selected) do
 			Lines = RemoveEntry(LineNum, map[LineNum].endLine, Lines)
 		end
 
@@ -419,25 +449,23 @@ function M.Remove(MakefilePath ,Content)
 			end
 		end
 
-    Content = table.concat(Lines, "\n")
-
+		Content = table.concat(Lines)
 
 		local Success, WriteErr = Utils.WriteFile(MakefilePath, Content)
 		if not Success then
 			vim.notify("Failed to write Makefile: " .. WriteErr, vim.log.levels.ERROR)
 			return
 		end
-
-	end, { ptrompt_title = "Select target(s) to remove",  previewer = picker.text_per_entry_previewer("make") })
+	end, { ptrompt_title = "Select target(s) to remove", previewer = picker.text_per_entry_previewer("make") })
 end
 
-function M.RunMake(Arg)
-	Arg = Arg or "add"
-
-	if type(Arg) ~= "string" or Arg == "" then
-		vim.notify("Invalid argument. Use: add, edit, run, or open", vim.log.levels.WARN)
-		return false
-	end
+function M.Make(Fargs)
+  if #Fargs > 2 then
+    vim.notify("Too many arguments. Use: add, edit, run, ...", vim.log.levels.WARN)
+    return false
+  end
+	Arg = Fargs[1] or "run"
+  Arg = Arg:lower()
 
 	local Root, Err = RootFinder.FindRoot(nil, M.Config.MaxSearchLevels, M.Config.RootMarkers)
 
@@ -476,19 +504,35 @@ function M.RunMake(Arg)
 		vim.notify("No file currently open", vim.log.levels.WARN)
 		return false
 	end
+	if #Fargs == 2 and Arg == "run" then
+		Fargs[2] = Fargs[2]:lower()
+		if Fargs[2] == "split" then
+			M.RunTargetInSpilt(MakefilePath, CurrentFile, MakefileContent)
+			return
+		elseif Fargs[2] == "float" then
+			M.RunTargetInSpilt(MakefilePath, CurrentFile, MakefileContent)
+			return
+		elseif Fargs[2] == "tab" then
+			M.RunTargetInSpilt(MakefilePath, CurrentFile, MakefileContent)
+			return
+		end
+	end
 
 	if Arg == "add" then
 		M.AddToMakefile(MakefilePath, CurrentFile, Root.Path, MakefileContent)
+	elseif Arg == "run" then
+		local RelativePath, _ = Utils.GetRelativePath(CurrentFile, Root.Path)
+		M.RunTargetInSpilt(MakefilePath, RelativePath, MakefileContent)
 	elseif Arg == "edit" then
 		M.EditTarget(MakefilePath, CurrentFile, Root.Path, MakefileContent)
-	elseif Arg == "run" then
-		M.RunTarget(MakefilePath, CurrentFile, MakefileContent)
 	elseif Arg == "tasks" then
 		M.PickAndRunTargets(MakefileContent)
 	elseif Arg == "edit_all" then
 		M.EditAllTargets(MakefilePath, Root.Path, MakefileContent)
 	elseif Arg == "remove" then
-		M.Remove(MakefilePath,MakefileContent)
+		M.Remove(MakefilePath, MakefileContent)
+	elseif Arg == "analysis" then
+		Parser.PrintAnalysisSummary(MakefileContent)
 	else
 		vim.notify("Unknown command", vim.log.levels.WARN)
 	end

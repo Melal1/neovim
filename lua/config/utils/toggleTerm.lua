@@ -20,20 +20,23 @@ local function create_split_terminal(opts)
 	local win = vim.api.nvim_get_current_win()
 	vim.api.nvim_win_set_buf(win, buf)
 
+	if vim.bo[buf].buftype ~= "terminal" then
+		vim.cmd("terminal " .. vim.o.shell)
+	end
+
 	return { buf = buf, win = win }
 end
 
 local M = {}
+
 function M.toggle()
 	if not vim.api.nvim_win_is_valid(state.split.win) then
 		state.split = create_split_terminal({ buf = state.split.buf })
-		if vim.bo[state.split.buf].buftype ~= "terminal" then
-			vim.cmd.terminal()
-		end
 	else
 		vim.api.nvim_win_hide(state.split.win)
 	end
 end
+
 function M.kill()
 	if vim.api.nvim_win_is_valid(state.split.win) then
 		vim.api.nvim_win_close(state.split.win, true)
@@ -44,4 +47,22 @@ function M.kill()
 	state.split.buf = -1
 	state.split.win = -1
 end
+
+function M.run_cmd(Ops)
+	if not vim.api.nvim_win_is_valid(state.split.win) then
+		state.split = create_split_terminal({ buf = state.split.buf })
+	end
+
+	if vim.api.nvim_buf_is_valid(state.split.buf) then
+		local chan_id = vim.b[state.split.buf].terminal_job_id
+		if chan_id then
+      for _,op in ipairs(Ops) do
+        vim.fn.chansend(chan_id, op .. "\n")
+      end
+		else
+			vim.notify("No terminal job attached to buffer", vim.log.levels.ERROR)
+		end
+	end
+end
+
 return M
