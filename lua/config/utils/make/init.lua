@@ -190,9 +190,9 @@ function M.RunTargetInSpilt(MakefilePath, RelativePath, Content)
 	end
 
 	local MakefileDir = vim.fn.fnamemodify(MakefilePath, ":h")
-	local Cmd = { "cd " .. vim.fn.shellescape(MakefileDir) .. " && clear", " make " .. RunTargetName }
+	local cmd = "cd " .. vim.fn.shellescape(MakefileDir) .. " && make " .. RunTargetName
+	term.SingleShot(cmd)
 
-	term.run_cmd(Cmd)
 	return true
 end
 

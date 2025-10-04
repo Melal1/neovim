@@ -3,7 +3,6 @@ return {
 		"nvim-telescope/telescope.nvim",
 		tag = "0.1.8",
 		cmd = "Telescope",
-		event = { "BufReadPost" },
 		-- Looks messy btw , but this is a simple solution
 		keys = {
 			{

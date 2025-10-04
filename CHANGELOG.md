@@ -1,31 +1,17 @@
-# Changelog
-
-All notable changes to this project will be documented in this file.
-
-## [Unreleased]
+## [Unreleased] - YYYY-MM-DD
 
 ### Added
-- Enhanced statusline with:
-  - Mode indicator (NORMAL, INSERT, VISUAL, etc.) with custom highlights.
-  - Git branch display.
-  - Buffer flags (modified, readonly, unmodifiable).
-  - Diagnostics (errors, warnings, hints, info).
-  - DAP (debugging) component.
-  - File path and name display with truncation for narrow windows.
-  - Line and column number display.
-- Randomized humorous Copilot names when attached to LSP.
-- Keymap `<leader><leader>x` to:
-  - Execute the current line in normal mode.
-  - Execute selected lines in visual mode as Lua code.
+- `toggleTerm.SingleShot(cmd, height)` function to run a single shell command in a temporary split.
+- Treesitter autocmd delayed by 50ms for safer initialization.
+- Statusline displays shell name for terminal buffers.
 
 ### Changed
-- Refactored `statusline.lua`:
-  - Removed dependency on `lsp-progress.nvim`.
-  - Dynamic truncation logic based on window width.
-  - Consolidated LSP status, diagnostics, and file components.
-- Updated colors and highlights for better visual distinction.
+- Statusline background set to transparent (`guibg=NONE`) for normal and terminal buffers.
+- `MakeTarget` runner now uses `SingleShot` instead of `run_cmd` for better terminal integration.
+- Terminal creation no longer redundantly specifies the shell.
+- Treesitter plugin now lazy-loads on `BufRead` and `BufNew` events.
+- Telescope plugin no longer triggers on `BufReadPost` to improve startup speed.
 
-### Removed
-- `plugins/lsp_progress.lua` plugin (deprecated).
-- Old `mode_info` table and `lsp_progress_component()` in statusline.
+### Fixed
+- Terminal buffers now correctly avoid filepath component in statusline.
 
