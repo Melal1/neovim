@@ -134,7 +134,8 @@ function M.AddToMakefile(MakefilePath, FilePath, RootPath, Content)
 					Generator.ExecutableTarget(Basename, RelativePath, Selected, M.Config.MakefileVars, RootPath)
 				if not status then
 					vim.notify(
-						"\nFailed to generate executable target. Missing include paths for: " .. table.concat(Lines, ", "),
+						"\nFailed to generate executable target. Missing include paths for: "
+							.. table.concat(Lines, ", "),
 						vim.log.levels.ERROR
 					)
 					return
@@ -175,7 +176,7 @@ function M.RunTargetInSpilt(MakefilePath, RelativePath, Content)
 		return false
 	end
 
-	local RunTargetName
+	local RunTargetName = ""
 	for _, Entry in ipairs(Targets) do
 		if Entry.path == RelativePath then
 			RunTargetName = "run" .. Entry.baseName
@@ -460,12 +461,12 @@ function M.Remove(MakefilePath, Content)
 end
 
 function M.Make(Fargs)
-  if #Fargs > 2 then
-    vim.notify("Too many arguments. Use: add, edit, run, ...", vim.log.levels.WARN)
-    return false
-  end
+	if #Fargs > 2 then
+		vim.notify("Too many arguments. Use: add, edit, run, ...", vim.log.levels.WARN)
+		return false
+	end
 	Arg = Fargs[1] or "run"
-  Arg = Arg:lower()
+	Arg = Arg:lower()
 
 	local Root, Err = RootFinder.FindRoot(nil, M.Config.MaxSearchLevels, M.Config.RootMarkers)
 
@@ -489,14 +490,7 @@ function M.Make(Fargs)
 
 	local MakefileContent, _ = Utils.ReadFile(MakefilePath)
 	if not MakefileContent then
-		local VarLines = Generator.GenerateMakefileVariables(M.Config.MakefileVars)
-		MakefileContent = table.concat(VarLines, "\n")
-		local Success, WriteErr = Utils.WriteFile(MakefilePath, MakefileContent)
-		if not Success then
-			vim.notify("Could not create Makefile: " .. WriteErr, vim.log.levels.ERROR)
-			return false
-		end
-		vim.notify("Created new Makefile with default variables", vim.log.levels.INFO)
+		vim.notify("Couldn't find Makefile", vim.log.levels.INFO)
 	end
 
 	local CurrentFile = vim.fn.expand("%:p")
@@ -506,14 +500,15 @@ function M.Make(Fargs)
 	end
 	if #Fargs == 2 and Arg == "run" then
 		Fargs[2] = Fargs[2]:lower()
+		local RelativePath, _ = Utils.GetRelativePath(CurrentFile, Root.Path)
 		if Fargs[2] == "split" then
-			M.RunTargetInSpilt(MakefilePath, CurrentFile, MakefileContent)
+			M.RunTargetInSpilt(MakefilePath, RelativePath, MakefileContent)
 			return
 		elseif Fargs[2] == "float" then
-			M.RunTargetInSpilt(MakefilePath, CurrentFile, MakefileContent)
+			M.RunTargetInSpilt(MakefilePath, RelativePath, MakefileContent)
 			return
 		elseif Fargs[2] == "tab" then
-			M.RunTargetInSpilt(MakefilePath, CurrentFile, MakefileContent)
+			M.RunTargetInSpilt(MakefilePath, RelativePath, MakefileContent)
 			return
 		end
 	end
