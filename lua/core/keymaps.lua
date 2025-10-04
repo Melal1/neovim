@@ -36,7 +36,34 @@ map(
 	{ desc = "Change all occurrences of word" }
 )
 
-map("n", "<leader><leader>x", "<cmd>source %<CR>", { desc = "Execute the current file" })
+map("n", "<leader><leader>x", function()
+	vim.cmd(".lua")
+end, { desc = "Execute current line" })
+
+-- Visual mode: execute the selected lines
+map("v", "<leader><leader>x", function()
+	-- Get the visual selection range
+	local start_line = vim.fn.line("v")
+	local end_line = vim.fn.line(".")
+	if start_line > end_line then
+		start_line, end_line = end_line, start_line
+	end
+
+	-- Execute the selected lines as Lua code
+	local lines = vim.api.nvim_buf_get_lines(0, start_line - 1, end_line, false)
+	local chunk = table.concat(lines, "\n")
+	local f, err = loadstring(chunk)
+
+	if not f then
+		vim.notify("Error: " .. err, vim.log.levels.ERROR)
+		return
+	end
+
+	local ok, runtime_err = pcall(f)
+	if not ok then
+		vim.notify("Runtime error: " .. runtime_err, vim.log.levels.ERROR)
+	end
+end, { desc = "Execute selected lines" })
 
 -- Quickfix navigation
 map("n", "<A-j>", "<cmd>cnext<CR>", { desc = "Go to next quickfix item" })
