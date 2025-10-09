@@ -1,17 +1,27 @@
-## [Unreleased] - YYYY-MM-DD
+# Changelog
+
+## [Unreleased]
 
 ### Added
-- `toggleTerm.SingleShot(cmd, height)` function to run a single shell command in a temporary split.
-- Treesitter autocmd delayed by 50ms for safer initialization.
-- Statusline displays shell name for terminal buffers.
+- **LuaDoc Annotations**  
+  - Added extensive type annotations for:
+    - `MakefileVars`, `RootInfo`, `MarkerInfo`, `MarkerPair`, `TargetInfo`, etc.
+  - Annotated functions with parameters and return types for better LSP support.
+
+- **Bear Integration**  
+  - Introduced a new module `lua/config/utils/make/modules/bear.lua`.
+  - Added `Bear.Target` and `Bear.CurrentFile` functions to run Bear on
+    specific targets or the current file.
+  - Integrated Bear into `AddToMakefile`, `EditTarget`, and executable/object
+    target generation.
 
 ### Changed
-- Statusline background set to transparent (`guibg=NONE`) for normal and terminal buffers.
-- `MakeTarget` runner now uses `SingleShot` instead of `run_cmd` for better terminal integration.
-- Terminal creation no longer redundantly specifies the shell.
-- Treesitter plugin now lazy-loads on `BufRead` and `BufNew` events.
-- Telescope plugin no longer triggers on `BufReadPost` to improve startup speed.
+- Refactored `Generator.ExecutableTarget` to return `(lines, success)` consistently.
+- Improved return values across `init.lua` functions to use boolean indicators.
+- Enhanced error handling and user notifications during Makefile operations.
 
 ### Fixed
-- Terminal buffers now correctly avoid filepath component in statusline.
+- Corrected minor inconsistencies in `RunTargetInSplit` and `Make` command handling.
+- Fixed handling of build directory and relative paths in several generator and
+  parser functions.
 
