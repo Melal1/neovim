@@ -106,9 +106,9 @@ function M.AddToMakefile(MakefilePath, FilePath, RootPath, Content)
 	local Vars = Parser.ParseVariables(Content)
 	local BuildDir = Vars["BUILD_DIR"]
 
-	local RelativePath, Err = Utils.GetRelativePath(FilePath, RootPath)
-	if not RelativePath then
-		vim.notify(Err or "Failed to get relative path", vim.log.levels.WARN)
+	local RelativePath, okay = Utils.GetRelativePath(FilePath, RootPath)
+	if not okay then
+		vim.notify(RelativePath)
 		return false
 	end
 
@@ -284,9 +284,9 @@ end
 function M.EditTarget(MakefilePath, FilePath, RootPath, Content, Entries, callback)
 	local Basename = vim.fn.fnamemodify(FilePath, ":t:r")
 
-	local RelativePath, Err = Utils.GetRelativePath(FilePath, RootPath)
-	if not RelativePath then
-		vim.notify(Err or "Failed to get relative path", vim.log.levels.ERROR)
+	local RelativePath, okay = Utils.GetRelativePath(FilePath, RootPath)
+	if not okay then
+		vim.notify(RelativePath)
 		if callback then
 			callback(false)
 		end
@@ -363,7 +363,7 @@ function M.EditTarget(MakefilePath, FilePath, RootPath, Content, Entries, callba
 
 		Content = table.concat(NewLines, "\n")
 
-		local GenLines,status =
+		local GenLines, status =
 			Generator.ExecutableTarget(Basename, RelativePath, selected, M.Config.MakefileVars, RootPath)
 		if not status then
 			vim.notify(
@@ -453,7 +453,7 @@ function M.Remove(MakefilePath, Content)
 	picker.pick_multi_with_preview(PickerEntries, function(selected)
 		if #selected == 0 then
 			vim.notify("Nothing selected", vim.log.levels.WARN)
-			return false
+			return
 		end
 
 		local Lines = {}
@@ -504,7 +504,7 @@ function M.Remove(MakefilePath, Content)
 		local Success, WriteErr = Utils.WriteFile(MakefilePath, Content)
 		if not Success then
 			vim.notify("Failed to write Makefile: " .. WriteErr, vim.log.levels.ERROR)
-			return false
+			return
 		end
 	end, { ptrompt_title = "Select target(s) to remove", previewer = picker.text_per_entry_previewer("make") })
 	return true
@@ -553,8 +553,8 @@ function M.Make(Fargs)
 	end
 	if #Fargs == 2 and Arg == "run" then
 		Fargs[2] = Fargs[2]:lower()
-		local RelativePath, err = Utils.GetRelativePath(CurrentFile, Root.Path)
-		if not err then
+		local RelativePath, okay = Utils.GetRelativePath(CurrentFile, Root.Path)
+		if not okay then
 			vim.notify(RelativePath, vim.log.levels.ERROR)
 			return false
 		end
@@ -572,6 +572,8 @@ function M.Make(Fargs)
 
 	if Arg == "add" then
 		return M.AddToMakefile(MakefilePath, CurrentFile, Root.Path, MakefileContent)
+  elseif Arg == "bearall" then
+    return require("config.utils.make.modules.bear").SelectTarget(MakefileContent,Root.Path)
 	elseif Arg == "run" then
 		local RelativePath, _ = Utils.GetRelativePath(CurrentFile, Root.Path)
 		return M.RunTargetInSpilt(MakefilePath, RelativePath, MakefileContent)

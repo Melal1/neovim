@@ -96,7 +96,7 @@ end
 ---@param FilePath string
 ---@param RootPath string
 ---@return string relativePath
----@return string? err
+---@return boolean okay
 function Utils.GetRelativePath(FilePath, RootPath)
 	local AbsFilePath = vim.fn.fnamemodify(FilePath, ":p")
 	local AbsRoot = vim.fn.fnamemodify(RootPath, ":p")
@@ -106,9 +106,9 @@ function Utils.GetRelativePath(FilePath, RootPath)
 	end
 
 	if AbsFilePath:sub(1, #AbsRoot) == AbsRoot then
-		return "./" .. AbsFilePath:sub(#AbsRoot + 1)
+		return "./" .. AbsFilePath:sub(#AbsRoot + 1), true
 	else
-		return "File is outside the project root", nil
+		return "File is outside the project root", false
 	end
 end
 
