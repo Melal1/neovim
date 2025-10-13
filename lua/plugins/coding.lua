@@ -1,4 +1,45 @@
 return {
+	--Formatting: conform
+	{
+		"stevearc/conform.nvim",
+		keys = {
+			{
+				"<leader>frm",
+				function()
+					require("conform").format({ lsp_format = "fallback" })
+				end,
+				desc = "Trigger formating",
+			},
+		},
+		opts = {},
+		config = function()
+			require("conform").setup({
+				formatters_by_ft = {
+					lua = { "stylua" },
+					javascript = { "prettier" },
+					typescript = { "prettier" },
+					cpp = { "clang_format" },
+					nix = { "nixpkgs_fmt" },
+				},
+				formatters = {
+					clang_format = {
+						prepend_args = {
+							"--style={BasedOnStyle: LLVM, \
+            IndentWidth: 2, \
+            UseTab: Never, \
+            ColumnLimit: 9999,\
+            BreakBeforeBraces: Allman, \
+            AlignArrayOfStructures: None,\
+            SeparateDefinitionBlocks: Always,\
+            EmptyLineBeforeAccessModifier: LogicalBlock,\
+            AllowShortFunctionsOnASingleLine: None}",
+						},
+					},
+				},
+			})
+		end,
+	},
+	--Cmp : Blink
 	{
 
 		event = { "BufRead", "BufNewFile" },
@@ -84,7 +125,7 @@ return {
 						columns = {
 							{ "source_name", gap = 1 },
 							{ "label", "label_description", gap = 1 },
-							{ "kind_icon", "kind" , gap = 2},
+							{ "kind_icon", "kind", gap = 2 },
 						},
 					},
 				},
@@ -121,5 +162,34 @@ return {
 			},
 		},
 		opts_extend = { "sources.default" },
+	},
+	--Treesitter
+	{
+
+		"nvim-treesitter/nvim-treesitter",
+		dependencies = {
+			"nvim-treesitter/nvim-treesitter-textobjects",
+			branch = "main",
+		},
+		branch = "main",
+		event = { "BufRead", "BufNew" },
+		build = ":TSUpdate",
+		config = function()
+			local ts = require("nvim-treesitter")
+			ts.install({ "cpp", "bash", "lua", "rust", "make" })
+			vim.api.nvim_create_autocmd("FileType", {
+				callback = function(details)
+					vim.defer_fn(function()
+						local bufnr = details.buf
+						if not pcall(vim.treesitter.start, bufnr) then
+							return -- Exit if treesitter was unable to start
+						end
+						vim.bo[bufnr].syntax = "on" -- fallback syntax highlighting
+						vim.wo.foldexpr = "v:lua.vim.treesitter.foldexpr()" -- treesitter folds
+						vim.bo[bufnr].indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()" -- treesitter indentation
+					end, 50) -- delay in milliseconds
+				end,
+			})
+		end,
 	},
 }
