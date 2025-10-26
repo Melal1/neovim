@@ -97,7 +97,7 @@ function M.AddToMakefile(MakefilePath, FilePath, RootPath, Content)
 		return false
 	end
 
-	local Success = Parser.HasReqVars(Content, M.Config.MakefileVars)
+  local Success = Generator.EnsureMakefileVariables(MakefilePath,Content,M.Config.MakefileVars)
 	if not Success then
 		vim.notify("Failed to ensure Makefile variables", vim.log.levels.ERROR)
 		return false
