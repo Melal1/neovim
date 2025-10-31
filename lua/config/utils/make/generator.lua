@@ -59,12 +59,25 @@ function Generator.ExecutableTarget(Basename, RelativePath, Dependencies, Makefi
 	local LinkDeps = {}
 	local Include = {}
 	local UnFoundIncludePath = {}
+	---@param Table string[]
+	---@param Target string
+	---@return boolean found
+	local function InTable(Table, Target)
+		for _, Ent in ipairs(Table) do
+			if Ent == Target then
+				return true
+			end
+		end
+		return false
+	end
 
 	for _, Dep in ipairs(Dependencies) do
 		table.insert(LinkDeps, Dep)
 		local IncludePath = Finder.FindHeaderDirectory(vim.fn.fnamemodify(Dep, ":t:r"), RootPath)
 		if IncludePath then
-			table.insert(Include, "-I" .. IncludePath)
+			if not InTable(Include, "-I" .. IncludePath) then
+				table.insert(Include, "-I" .. IncludePath)
+			end
 		else
 			table.insert(UnFoundIncludePath, Dep)
 		end
@@ -72,7 +85,7 @@ function Generator.ExecutableTarget(Basename, RelativePath, Dependencies, Makefi
 
 	if #UnFoundIncludePath > 0 then
 		-- return `nil` second value (list of missing includes)
-		return UnFoundIncludePath,false
+		return UnFoundIncludePath, false
 	end
 
 	local IncludeStr = table.concat(Include, " ")
