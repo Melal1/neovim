@@ -7,40 +7,57 @@ return {
 		"rachartier/tiny-inline-diagnostic.nvim",
 		event = "BufRead",
 		priority = 1000,
-		config = function()
-			require("tiny-inline-diagnostic").setup({
-				hi = {
-					error = "DiagnosticError", -- Highlight for error diagnostics
-					warn = "DiagnosticWarn", -- Highlight for warning diagnostics
-					info = "DiagnosticInfo", -- Highlight for info diagnostics
-					hint = "DiagnosticHint", -- Highlight for hint diagnostics
-					arrow = "EndOfBuffer", -- Highlight for the arrow pointing to diagnostic
-					background = "NONE", -- Background highlight for diagnostics
-					mixing_color = "Normal", -- Color to blend background with (or "None")
-				},
+		opts = {
+			hi = {
+				error = "DiagnosticError", -- Highlight for error diagnostics
+				warn = "DiagnosticWarn", -- Highlight for warning diagnostics
+				info = "DiagnosticInfo", -- Highlight for info diagnostics
+				hint = "DiagnosticHint", -- Highlight for hint diagnostics
+				arrow = "EndOfBuffer", -- Highlight for the arrow pointing to diagnostic
+				background = "NONE", -- Background highlight for diagnostics
+				mixing_color = "Normal", -- Color to blend background with (or "None")
+			},
 
-				transparent_cursorline = false,
-				transparent_bg = false,
-				options = {
-					set_arrow_to_diag_color = false,
-					add_messages = {
-						display_count = true,
-					},
-					multilines = {
-						enabled = true,
-					},
-					show_source = {
-						if_many = true, -- Only show source if multiple sources exist for the same diagnostic
-					},
+			transparent_cursorline = false,
+			transparent_bg = false,
+			options = {
+				set_arrow_to_diag_color = false,
+				add_messages = {
+					display_count = true,
 				},
-			})
-			vim.diagnostic.config({ virtual_text = false })
+				multilines = {
+					enabled = true,
+				},
+				show_source = {
+					if_many = true, -- Only show source if multiple sources exist for the same diagnostic
+				},
+			},
+		},
+		vim.diagnostic.config({ virtual_text = false }),
+	},
+	--CursorWord
+	{
+		"nvim-mini/mini.cursorword",
+		version = false,
+		opts = {},
+		init = function()
+			vim.g.minicursorword_disable = true
 		end,
+		keys = {
+			{
+				"<leader><leader>w",
+				function()
+					vim.g.minicursorword_disable = not vim.g.minicursorword_disable
+				end,
+				desc = "Toggle cursor word highlight",
+			},
+		},
 	},
 	--Indent
 	{
 		"nvim-mini/mini.indentscope",
 		version = false,
+    event = {"BufReadPost","BufNewFile"},
 		opts = {
 			-- symbol = "▏",
 			symbol = "│",

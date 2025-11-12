@@ -7,7 +7,7 @@ return {
 			tabkey = "<Tab>",
 			reverse_key = "<S-Tab>",
 			act_as_tab = true,
-			behavior = "nested", ---@type ntab.behavior
+			behavior = "nested",
 			pairs = { ---@type ntab.pair[]
 				{ open = "(", close = ")" },
 				{ open = "[", close = "]" },
@@ -36,6 +36,21 @@ return {
 						},
 					},
 				},
+			},
+		},
+	},
+	--Split join
+	{
+		"nvim-mini/mini.splitjoin",
+		version = false,
+		opts = {},
+		keys = {
+			{
+				"<leader>tj",
+				function()
+					require("mini.splitjoin").toggle()
+				end,
+				desc = "Toggle Split/Join",
 			},
 		},
 	},

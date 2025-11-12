@@ -129,102 +129,84 @@ return {
 			},
 		},
 	},
+	{
+		"stevearc/aerial.nvim",
+		keys = {
+			{ "<leader>oo", "<cmd>AerialOpen float<CR>", desc = "Toggle Aerial" },
+		},
+		opts = {
+			on_attach = function(bufnr)
+				-- Jump forwards/backwards with '{' and '}'
+				vim.keymap.set("n", "{", "<cmd>AerialPrev<CR>", { buffer = bufnr })
+				vim.keymap.set("n", "}", "<cmd>AerialNext<CR>", { buffer = bufnr })
+			end,
+        backends = { "lsp","treesitter"}, -- Order matter
+			filter_kind = {
+				"Array",
+				"Boolean",
+				"Class",
+				"Constant",
+				"Constructor",
+				"Enum",
+				"EnumMember",
+				"Event",
+				"Field",
+				"File",
+				"Function",
+				"Interface",
+				"Key",
+				"Method",
+				"Module",
+				"Namespace",
+				"Null",
+				"Number",
+				"Object",
+				"Operator",
+				"Package",
+				"Property",
+				"String",
+				"Struct",
+				"TypeParameter",
+				"Variable",
+			},
+
+			layout = {
+				width = 40,
+			},
+			float = {
+				border = "rounded",
+				relative = "win",
+				max_height = 0.9,
+				min_height = { 20 },
+			},
+		},
+		-- Optional dependencies
+		dependencies = {
+			"nvim-treesitter/nvim-treesitter",
+			"nvim-tree/nvim-web-devicons",
+		},
+	},
 	--Telescope
 	{
 		"nvim-telescope/telescope.nvim",
 		tag = "0.1.8",
 		cmd = "Telescope",
 		-- Looks messy btw , but this is a simple solution
+    -- stylua: ignore
 		keys = {
-			{
-				"<leader>opc",
-				function()
-					require("telescope.builtin").find_files({ cwd = require("lazy.core.config").options.root })
-				end,
-				desc = "Find Plugin File",
-			},
-			{
-				"<leader>frg",
-				function()
-					-- MiniFiles.close()
-					require("telescope.builtin").registers()
-				end,
-				desc = "Registers",
-			},
-			{
-				"<leader>ff",
-				function()
-					-- MiniFiles.close()
-					require("telescope.builtin").find_files()
-				end,
-				desc = "Find Files",
-			},
-			{
-				"<leader>fg",
-				function()
-					-- MiniFiles.close()
-					require("telescope.builtin").live_grep()
-				end,
-				desc = "Live Grep",
-			},
-			{
-				"<leader>fb",
-				function()
-					-- MiniFiles.close()
-					require("telescope.builtin").buffers()
-				end,
-				desc = "Buffers",
-			},
-			{
-				"<leader>fp",
-				function()
-					-- MiniFiles.close()
-					require("telescope").extensions.projects.projects()
-				end,
-				desc = "Projects",
-			},
-			{
-				"<leader>fSt",
-				function()
-					-- MiniFiles.close()
-					local word = vim.fn.expand("<cWORD>")
-					require("telescope.builtin").grep_string({ search = word })
-				end,
-				desc = "Grep WORD under cursor (includes punctuation)",
-			},
-			{
-				"<leader>fst",
-				function()
-					-- MiniFiles.close()
-					local word = vim.fn.expand("<cword>")
-					require("telescope.builtin").grep_string({ search = word })
-				end,
-				desc = "Grep word under cursor (stops at punctuation)",
-			},
-			{
-				"<leader>fo",
-				function()
-					-- MiniFiles.close()
-					require("telescope.builtin").oldfiles()
-				end,
-				desc = "Old Files",
-			},
-			{
-				"<leader>fsy",
-				function()
-					-- MiniFiles.close()
-					require("telescope.builtin").lsp_document_symbols()
-				end,
-				desc = "LSP Document Symbols",
-			},
-			{
-				"<leader>fdia",
-				function()
-					-- MiniFiles.close()
-					require("telescope.builtin").diagnostics()
-				end,
-				desc = "Diagnostics",
-			},
+			{ "<leader>opc",function() require("telescope.builtin").find_files({ cwd = require("lazy.core.config").options.root }) end,desc = "Find Plugin File" },
+			{"<leader>frg",function() require("telescope.builtin").registers() end,desc = "Registers",},
+			{"<leader>ff", function() require("telescope.builtin").find_files() end, desc = "Find Files",},
+			{"<leader>fg", function() require("telescope.builtin").live_grep() end, desc = "Live Grep",},
+			{"<leader>fb", function() require("telescope.builtin").buffers() end, desc = "Buffers",},
+			{"<leader>fp", function() require("telescope").extensions.projects.projects() end, desc = "Projects",},
+			{"<leader>fSt", function() local word = vim.fn.expand("<cWORD>") require("telescope.builtin").grep_string({ search = word }) end, desc = "Grep WORD under cursor (includes punctuation)",},
+			{"<leader>fst", function() local word = vim.fn.expand("<cword>") require("telescope.builtin").grep_string({ search = word }) end, desc = "Grep word under cursor (stops at punctuation)",},
+			{"<leader>fo", function() require("telescope.builtin").oldfiles() end, desc = "Old Files",},
+			{"<leader>fsm", function() require("telescope.builtin").lsp_document_symbols() end, desc = "LSP Document Symbols",},
+			{"<leader>fdia", function() require("telescope.builtin").diagnostics() end, desc = "Diagnostics",},
+      {"<leader>OO",function () require("telescope").extensions.aerial.aerial() end ,desc = "Aerial Symbols",},
+      {"<leader>frf",function () require("telescope.builtin").lsps_references() end, desc = "LSP References",},
 		},
 
 		dependencies = {
@@ -307,6 +289,22 @@ return {
 					},
 				},
 				extensions = {
+					aerial = {
+						-- Set the width of the first two columns (the second
+						-- is relevant only when show_columns is set to 'both')
+						col1_width = 4,
+						col2_width = 30,
+						-- How to format the symbols
+						format_symbol = function(symbol_path, filetype)
+							if filetype == "json" or filetype == "yaml" then
+								return table.concat(symbol_path, ".")
+							else
+								return symbol_path[#symbol_path]
+							end
+						end,
+						-- Available modes: symbols, lines, both
+						show_columns = "both",
+					},
 					["ui-select"] = {
 						require("telescope.themes").get_dropdown({
 							previewer = false,
@@ -333,6 +331,7 @@ return {
 			telescope.load_extension("projects")
 			telescope.load_extension("fzf")
 			telescope.load_extension("hierarchy")
+			telescope.load_extension("aerial")
 		end,
 	},
 	--TODO:
