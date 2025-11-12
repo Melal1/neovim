@@ -26,7 +26,7 @@ vim.opt.smartindent = true
 vim.opt.shiftwidth = 2 -- indent = 2 spaces
 vim.opt.number = true -- show line numbers
 vim.opt.relativenumber = true -- show relative numbers
-vim.opt.cursorlineopt = "number"
+-- vim.opt.cursorlineopt = "number"
 vim.opt.cursorline = true
 vim.opt.updatetime = 50
 vim.opt.undofile = true -- persistent undo history
@@ -43,9 +43,20 @@ vim.opt.wrap = false
 vim.opt.hlsearch = false
 vim.opt.incsearch = true
 vim.opt.guicursor = ""
-vim.cmd('autocmd BufEnter * set formatoptions-=cro')
-vim.cmd('autocmd BufEnter * setlocal formatoptions-=cro')
--- vim.api.nvim_set_hl(0, "LineNr", { fg = "#4e4e4e", bold = false }) -- Normal line numbers
+vim.cmd("autocmd BufEnter * set formatoptions-=cro")
+vim.cmd("autocmd BufEnter * setlocal formatoptions-=cro")
+vim.api.nvim_create_autocmd({ "InsertLeave", "WinEnter" }, {
+	callback = function()
+		vim.opt_local.cursorline = true
+	end,
+})
+
+vim.api.nvim_create_autocmd({ "InsertEnter", "WinLeave" }, {
+	callback = function()
+		vim.opt_local.cursorline = false
+	end,
+})
+vim.api.nvim_set_hl(0, "CursorLine", { bg = "#1b1b26", bold = true }) -- example color
 
 -- ========================================
 -- Other
