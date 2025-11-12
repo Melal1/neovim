@@ -39,18 +39,27 @@ return {
 	},
 	--Indent
 	{
-		"lukas-reineke/indent-blankline.nvim",
-		event = "BufRead",
-		main = "ibl",
-		---@module "ibl"
-		---@type ibl.config
-
-		config = function()
-			vim.cmd([[highlight IblIndent guifg=#252530 gui=nocombine]])
-			vim.cmd([[highlight IblScope guifg=#c9b1ca gui=nocombine]])
-			require("ibl").setup({})
-		end,
+		"nvim-mini/mini.indentscope",
+		version = false,
+		opts = {
+			-- symbol = "▏",
+			symbol = "│",
+			options = { try_as_border = true },
+		},
 	},
+	-- {
+	-- 	"lukas-reineke/indent-blankline.nvim",
+	-- 	event = "BufRead",
+	-- 	main = "ibl",
+	-- 	---@module "ibl"
+	-- 	---@type ibl.config
+	--
+	-- 	config = function()
+	-- 		vim.cmd([[highlight IblIndent guifg=#252530 gui=nocombine]])
+	-- 		vim.cmd([[highlight IblScope guifg=#c9b1ca gui=nocombine]])
+	-- 		require("ibl").setup({})
+	-- 	end,
+	-- },
 	--Colorizer: ccc
 	{
 		"uga-rosa/ccc.nvim",
@@ -207,7 +216,7 @@ return {
 		config = function()
 			vim.o.numberwidth = 3
 			-- vim.api.nvim_set_hl(0, "CursorLineNr", { fg = "#cdcdcd", bg = "#282828", bold = true })
-			vim.api.nvim_set_hl(0, "CursorLineNr", { fg = "#cdcdcd", bg = "#1b1b26" , bold = true })
+			vim.api.nvim_set_hl(0, "CursorLineNr", { fg = "#cdcdcd", bg = "#1b1b26", bold = true })
 			-- vim.api.nvim_set_hl(0, "CursorLine", { bg = "#282828" })
 			local builtin = require("statuscol.builtin")
 			require("statuscol").setup({
@@ -243,7 +252,6 @@ return {
 					},
 					{ text = { builtin.foldfunc }, click = "v:lua.ScFa" },
 					{ text = { " " } },
-
 				},
 			})
 		end,

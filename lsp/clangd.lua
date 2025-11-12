@@ -69,9 +69,24 @@ local clang_tidy_checks =
 local function get_cmd()
 	-- vim.notify("Called get_cmd")
 	if disable_tidy then
-		return { "clangd", "--background-index", "--clang-tidy=false" }
+		return {
+			"clangd",
+			"--background-index",
+			"--header-insertion=iwyu",
+			"--completion-style=detailed",
+			"--function-arg-placeholders",
+			"--clang-tidy=false",
+		}
 	else
-		return { "clangd", "--background-index", "--clang-tidy", "--clang-tidy-checks=" .. clang_tidy_checks }
+		return {
+			"clangd",
+			"--background-index",
+			"--header-insertion=iwyu",
+			"--completion-style=detailed",
+			"--function-arg-placeholders",
+			"--clang-tidy",
+			"--clang-tidy-checks=" .. clang_tidy_checks,
+		}
 	end
 end
 
@@ -90,12 +105,16 @@ return {
 	reuse_client = reuse_client,
 
 	root_markers = {
-		".clangd",
-		".clang-tidy",
-		".clang-format",
 		"compile_commands.json",
 		"compile_flags.txt",
 		"configure.ac", -- AutoTools
+		"Makefile",
+		"configure.ac",
+		"configure.in",
+		"config.h.in",
+		"meson.build",
+		"meson_options.txt",
+		"build.ninja",
 		".git",
 	},
 
@@ -110,6 +129,13 @@ return {
 	---@param client vim.lsp.Client
 	---@param bufnr integer
 	on_attach = function(client, bufnr)
+		vim.keymap.set(
+			"n",
+			"<leader>ch",
+			"<cmd>LspClangdSwitchSourceHeader<cr>",
+			{ desc = "Switch Source/Header (C/C++)" }
+		)
+
 		vim.api.nvim_buf_create_user_command(bufnr, "LspClangdSwitchSourceHeader", function()
 			switch_source_header(bufnr, client)
 		end, { desc = "Switch between source/header" })
@@ -136,9 +162,9 @@ return {
 			if client.name == "clangd" then
 				client.stop(client, true)
 			end
-      vim.defer_fn(function()
-        vim.cmd("update | e!")
-      end, 500)
+			vim.defer_fn(function()
+				vim.cmd("update | e!")
+			end, 500)
 		end, { desc = "Toggle clangd cmd and restart LSP" })
 	end,
 }
