@@ -1,5 +1,42 @@
 local theme = require("config.utils.theme").apply_theme()
+
+--Diagnostics: tiny-inline
+
 return {
+	{
+		"rachartier/tiny-inline-diagnostic.nvim",
+		event = "BufRead",
+		priority = 1000,
+		config = function()
+			require("tiny-inline-diagnostic").setup({
+				hi = {
+					error = "DiagnosticError", -- Highlight for error diagnostics
+					warn = "DiagnosticWarn", -- Highlight for warning diagnostics
+					info = "DiagnosticInfo", -- Highlight for info diagnostics
+					hint = "DiagnosticHint", -- Highlight for hint diagnostics
+					arrow = "EndOfBuffer", -- Highlight for the arrow pointing to diagnostic
+					background = "NONE", -- Background highlight for diagnostics
+					mixing_color = "Normal", -- Color to blend background with (or "None")
+				},
+
+				transparent_cursorline = false,
+				transparent_bg = false,
+				options = {
+					set_arrow_to_diag_color = false,
+					add_messages = {
+						display_count = true,
+					},
+					multilines = {
+						enabled = true,
+					},
+					show_source = {
+						if_many = true, -- Only show source if multiple sources exist for the same diagnostic
+					},
+				},
+			})
+			vim.diagnostic.config({ virtual_text = false })
+		end,
+	},
 	--Indent
 	{
 		"lukas-reineke/indent-blankline.nvim",
@@ -169,7 +206,9 @@ return {
 		event = { "BufReadPre", "BufNewFile" },
 		config = function()
 			vim.o.numberwidth = 3
-			vim.api.nvim_set_hl(0, "CursorLineNr", { fg = "#cdcdcd", bg = "NONE", bold = true })
+			-- vim.api.nvim_set_hl(0, "CursorLineNr", { fg = "#cdcdcd", bg = "#282828", bold = true })
+			vim.api.nvim_set_hl(0, "CursorLineNr", { fg = "#cdcdcd", bg = "#1b1b26" , bold = true })
+			-- vim.api.nvim_set_hl(0, "CursorLine", { bg = "#282828" })
 			local builtin = require("statuscol.builtin")
 			require("statuscol").setup({
 				relculright = true,
@@ -190,7 +229,7 @@ return {
 							namespace = { "diagnostic", "gitsigns_signs_" },
 							maxwidth = 1,
 							colwidth = 1,
-							auto = " ",
+							auto = "",
 							wrap = true,
 							foldclosed = true,
 						},
@@ -200,10 +239,11 @@ return {
 							builtin.lnumfunc,
 							" ",
 						},
-						condition = { true, builtin.not_empty },
+						Condition = { true, builtin.not_empty },
 					},
 					{ text = { builtin.foldfunc }, click = "v:lua.ScFa" },
-					{ text = { "  " } },
+					{ text = { " " } },
+
 				},
 			})
 		end,

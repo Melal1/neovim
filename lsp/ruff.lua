@@ -26,8 +26,27 @@
 ---
 --- Refer to the [documentation](https://docs.astral.sh/ruff/editors/) for more details.
 return {
-  cmd = { 'ruff', 'server' },
-  filetypes = { 'python' },
-  root_markers = { 'pyproject.toml', 'ruff.toml', '.ruff.toml', '.git' },
-  settings = {},
+	cmd = { "ruff", "server" },
+	filetypes = { "python" },
+	root_markers = { "pyproject.toml", "ruff.toml", ".ruff.toml", ".git" },
+	settings = {
+		configurationPreference = "filesystemFirst",
+		configuration = {
+			lint = {
+				select = { "E4", "E7", "E9", "F" },
+				unfixable = { "F401" },
+				["extend-select"] = { "TID251" },
+				["flake8-tidy-imports"] = {
+					["banned-api"] = {
+						["typing.TypedDict"] = {
+							msg = "Use `typing_extensions.TypedDict` instead",
+						},
+					},
+				},
+			},
+			format = {
+				["quote-style"] = "double",
+			},
+		},
+	},
 }

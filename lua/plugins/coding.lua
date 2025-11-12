@@ -1,4 +1,21 @@
 return {
+
+	--Linting: none-ls
+	{
+		"nvimtools/none-ls.nvim",
+		event = { "BufReadPost" },
+
+		config = function()
+			local null_ls = require("null-ls")
+
+			null_ls.setup({
+				sources = {
+					null_ls.builtins.diagnostics.mypy,
+				},
+			})
+		end,
+	},
+
 	--Formatting: conform
 	{
 		"stevearc/conform.nvim",
@@ -15,6 +32,14 @@ return {
 		config = function()
 			require("conform").setup({
 				formatters_by_ft = {
+					python = {
+						-- To fix auto-fixable lint errors.
+						"ruff_fix",
+						-- To run the Ruff formatter.
+						"ruff_format",
+						-- To organize the imports.
+						"ruff_organize_imports",
+					},
 					lua = { "stylua" },
 					javascript = { "prettier" },
 					typescript = { "prettier" },
@@ -176,7 +201,7 @@ return {
 		build = ":TSUpdate",
 		config = function()
 			local ts = require("nvim-treesitter")
-			ts.install({ "cpp", "bash", "lua", "rust", "make" })
+			ts.install({ "pyhton", "cpp", "bash", "lua", "rust", "make" })
 			vim.api.nvim_create_autocmd("FileType", {
 				callback = function(details)
 					vim.defer_fn(function()
@@ -186,7 +211,7 @@ return {
 						end
 						vim.bo[bufnr].syntax = "on" -- fallback syntax highlighting
 						vim.wo.foldexpr = "v:lua.vim.treesitter.foldexpr()" -- treesitter folds
-						vim.bo[bufnr].indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()" -- treesitter indentation
+						-- vim.bo[bufnr].indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()" -- treesitter indentation
 					end, 50) -- delay in milliseconds
 				end,
 			})
