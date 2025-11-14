@@ -94,6 +94,9 @@ local function reuse_client(client, config)
 	return not disable_tidy and client.name == "clangd"
 end
 
+local navic = require("nvim-navic")
+local navbud = require"nvim-navbuddy"
+
 ---@class ClangdInitializeResult: lsp.InitializeResult
 ---@field offsetEncoding? string
 return {
@@ -129,6 +132,8 @@ return {
 	---@param client vim.lsp.Client
 	---@param bufnr integer
 	on_attach = function(client, bufnr)
+		navic.attach(client, bufnr)
+    navbud.attach(client,bufnr)
 		vim.keymap.set(
 			"n",
 			"<leader>ch",

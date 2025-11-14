@@ -9,7 +9,7 @@ return {
 				---@type dapview.Config
 				keys = {
 					{
-						"<leader>dc",
+						"<leader>du",
 						"<cmd>DapViewToggle<CR>",
 						desc = "Start Ui",
 					},
@@ -129,62 +129,22 @@ return {
 			},
 		},
 	},
+
 	{
-		"stevearc/aerial.nvim",
-		keys = {
-			{ "<leader>oo", "<cmd>AerialOpen float<CR>", desc = "Toggle Aerial" },
+		"SmiteshP/nvim-navbuddy",
+		dependencies = {
+			"SmiteshP/nvim-navic",
+			"MunifTanjim/nui.nvim",
 		},
 		opts = {
-			on_attach = function(bufnr)
-				-- Jump forwards/backwards with '{' and '}'
-				vim.keymap.set("n", "{", "<cmd>AerialPrev<CR>", { buffer = bufnr })
-				vim.keymap.set("n", "}", "<cmd>AerialNext<CR>", { buffer = bufnr })
-			end,
-        backends = { "lsp","treesitter"}, -- Order matter
-			filter_kind = {
-				"Array",
-				"Boolean",
-				"Class",
-				"Constant",
-				"Constructor",
-				"Enum",
-				"EnumMember",
-				"Event",
-				"Field",
-				"File",
-				"Function",
-				"Interface",
-				"Key",
-				"Method",
-				"Module",
-				"Namespace",
-				"Null",
-				"Number",
-				"Object",
-				"Operator",
-				"Package",
-				"Property",
-				"String",
-				"Struct",
-				"TypeParameter",
-				"Variable",
-			},
-
-			layout = {
-				width = 40,
-			},
-			float = {
-				border = "rounded",
-				relative = "win",
-				max_height = 0.9,
-				min_height = { 20 },
-			},
+			custom_hl_group = nil, -- "Visual" or any other hl group to use instead of inverted colors
 		},
-		-- Optional dependencies
-		dependencies = {
-			"nvim-treesitter/nvim-treesitter",
-			"nvim-tree/nvim-web-devicons",
-		},
+		init = function()
+			vim.keymap.set("n", "<leader>oo", function()
+				require("nvim-navbuddy").open()
+			end, { desc = "Open outline window ( NavBuddy )" })
+		end,
+		lazy = true,
 	},
 	--Telescope
 	{
@@ -203,9 +163,8 @@ return {
 			{"<leader>fSt", function() local word = vim.fn.expand("<cWORD>") require("telescope.builtin").grep_string({ search = word }) end, desc = "Grep WORD under cursor (includes punctuation)",},
 			{"<leader>fst", function() local word = vim.fn.expand("<cword>") require("telescope.builtin").grep_string({ search = word }) end, desc = "Grep word under cursor (stops at punctuation)",},
 			{"<leader>fo", function() require("telescope.builtin").oldfiles() end, desc = "Old Files",},
-			{"<leader>fsm", function() require("telescope.builtin").lsp_document_symbols() end, desc = "LSP Document Symbols",},
+			{"<leader>OO", function() require("telescope.builtin").lsp_document_symbols() end, desc = "LSP Document Symbols",},
 			{"<leader>fdia", function() require("telescope.builtin").diagnostics() end, desc = "Diagnostics",},
-      {"<leader>OO",function () require("telescope").extensions.aerial.aerial() end ,desc = "Aerial Symbols",},
       {"<leader>frf",function () require("telescope.builtin").lsps_references() end, desc = "LSP References",},
 		},
 
@@ -331,7 +290,6 @@ return {
 			telescope.load_extension("projects")
 			telescope.load_extension("fzf")
 			telescope.load_extension("hierarchy")
-			telescope.load_extension("aerial")
 		end,
 	},
 	--TODO:
@@ -652,86 +610,6 @@ return {
 			filetypes = {
 				markdown = true,
 				help = true,
-			},
-		},
-	},
-	--Ai wtf
-	{
-		"piersolenski/wtf.nvim",
-		enable = false,
-		dependencies = {
-			"nvim-lua/plenary.nvim",
-			"MunifTanjim/nui.nvim",
-			"nvim-telescope/telescope.nvim", -- Optional: For WtfGrepHistory
-		},
-		opts = {
-			provider = "gemini",
-			providers = {
-				gemini = {
-					api_key = "AIzaSyCnGm9rNhratLuyDtEEmJt3W6i8fSMMy2c",
-				},
-				deepseek = {
-					-- An alternative way to set your API key
-					--
-					api_key = "sk-7e17d73ea7ec446d842ab147030a9b8d",
-					-- Your preferred model
-				},
-			},
-
-			hooks = {
-				request_started = nil,
-				request_finished = nil,
-			},
-		},
-
-		keys = {
-			{
-				"<leader>wd",
-				mode = { "n", "x" },
-				function()
-					require("wtf").diagnose()
-				end,
-				desc = "Debug diagnostic with AI",
-			},
-			{
-				"<leader>wf",
-				mode = { "n", "x" },
-				function()
-					require("wtf").fix()
-				end,
-				desc = "Fix diagnostic with AI",
-			},
-			{
-				mode = { "n" },
-				"<leader>ws",
-				function()
-					require("wtf").search()
-				end,
-				desc = "Search diagnostic with Google",
-			},
-			{
-				mode = { "n" },
-				"<leader>wp",
-				function()
-					require("wtf").pick_provider()
-				end,
-				desc = "Pick provider",
-			},
-			{
-				mode = { "n" },
-				"<leader>wh",
-				function()
-					require("wtf").history()
-				end,
-				desc = "Populate the quickfix list with previous chat history",
-			},
-			{
-				mode = { "n" },
-				"<leader>wg",
-				function()
-					require("wtf").grep_history()
-				end,
-				desc = "Grep previous chat history with Telescope",
 			},
 		},
 	},

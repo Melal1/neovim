@@ -67,6 +67,8 @@
 --- * [Lua.runtime.path](https://luals.github.io/wiki/settings/#runtimepath)
 --- * [Lua.workspace.library](https://luals.github.io/wiki/settings/#workspacelibrary)
 ---
+local navic = require("nvim-navic")
+local navbuddy = require("nvim-navbuddy")
 return {
 	cmd = { "lua-language-server" },
 	filetypes = { "lua" },
@@ -80,6 +82,13 @@ return {
 		"selene.yml",
 		".git",
 	},
+	---@param client vim.lsp.Client
+	---@param bufnr integer
+	on_attach = function(client, bufnr)
+		navic.attach(client, bufnr)
+		navbuddy.attach(client, bufnr)
+	end,
+
 	settings = {
 		Lua = {
 			runtime = {

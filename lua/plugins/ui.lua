@@ -3,6 +3,19 @@ local theme = require("config.utils.theme").apply_theme()
 --Diagnostics: tiny-inline
 
 return {
+	--BreadCrump
+	{
+		"SmiteshP/nvim-navic",
+		lazy = true,
+		opts = {
+			highlight = true,
+		},
+	},
+	--Smooth scroll
+	{
+		"karb94/neoscroll.nvim",
+		opts = { duration_multiplier = 0.15 }, -- Global duration multiplier,
+	},
 	{
 		"rachartier/tiny-inline-diagnostic.nvim",
 		event = "BufRead",
@@ -57,7 +70,7 @@ return {
 	{
 		"nvim-mini/mini.indentscope",
 		version = false,
-    event = {"BufReadPost","BufNewFile"},
+		event = { "BufReadPost", "BufNewFile" },
 		opts = {
 			-- symbol = "▏",
 			symbol = "│",
@@ -307,7 +320,7 @@ return {
 			-- lazy = true,
 			name = "catppuccin",
 			priority = 1000,
-			enabled = false,
+			enabled = true,
 			config = function()
 				require("catppuccin").setup({
 					transparent_background = true,
@@ -356,7 +369,7 @@ return {
 						alpha = true,
 					},
 				})
-				vim.cmd.colorscheme(theme)
+				vim.cmd.colorscheme("vague")
 			end,
 		},
 		{
@@ -467,7 +480,7 @@ return {
 					},
 				})
 
-				vim.cmd("colorscheme vague")
+				-- vim.cmd("colorscheme vague")
 			end,
 		},
 	},

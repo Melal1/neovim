@@ -108,8 +108,6 @@ map("n", "<leader>cd", "<cmd>lcd %:p:h<CR>", { desc = "Set local working directo
 map("n", "<leader>Cd", "<cmd>cd %:p:h<CR>", { desc = "Set Global working directory to current file" })
 
 -- Center screen after scrolling/search
-map("n", "<C-d>", "<C-d>zz", { desc = "Scroll half page down and center" })
-map("n", "<C-u>", "<C-u>zz", { desc = "Scroll half page up and center" })
 map("n", "n", "nzzzv", { desc = "Next search result and center" })
 map("n", "N", "Nzzzv", { desc = "Previous search result and center" })
 
