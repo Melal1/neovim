@@ -76,7 +76,6 @@ end, { desc = "Toggle diagnostics" })
 vim.keymap.set("n", "<leader>ga", function()
   local clients = vim.lsp.get_active_clients()
   for _,c in ipairs(clients) do
-    print(vim.inspect(c.name))
-    print('\n')
+    vim.notify(vim.inspect(c.name))
   end
 end)

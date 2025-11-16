@@ -17,8 +17,7 @@ local function run_bear_async(cmd, success_msg)
 				end
 
 				local err_path = "/tmp/Bearerr"
-        if Utils.WriteFile(err_path, obj.stderr,false) then
-
+				if Utils.WriteFile(err_path, obj.stderr, false) then
 					vim.notify(
 						"Bear failed. Error saved to: " .. err_path,
 						vim.log.levels.HINT,
@@ -39,11 +38,12 @@ end
 ---Run bear for the current file
 ---@param Content string Makefile content
 ---@param Rootdir string Root directory of the project
+---@param RelativePath string|nil
 ---@return boolean success True if cmd sent ( Regarding cmd errors)
-function M.CurrentFile(Content, Rootdir)
+function M.CurrentFile(Content, Rootdir, RelativePath)
 	local Vars = Parser.ParseVariables(Content)
 	local BuildDir = Vars["BUILD_DIR"]
-	local RelativePath = Utils.GetRelativePath(vim.fn.expand("%"), Rootdir)
+	RelativePath = RelativePath or Utils.GetRelativePath(vim.fn.expand("%"), Rootdir)
 
 	if not RelativePath then
 		return false
@@ -103,7 +103,6 @@ end
 ---@param Rootdir string Root directory of the project
 ---@return boolean success True if cmd sent ( Regarding cmd errors)
 function M.SelectTarget(Content, Rootdir)
-	print("enterd")
 	local Picker = require("config.utils.pick")
 	if not Picker.available then
 		vim.notify("Picker is not available")

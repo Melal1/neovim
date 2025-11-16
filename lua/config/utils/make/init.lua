@@ -90,11 +90,15 @@ end
 ---@param FilePath string
 ---@param RootPath string
 ---@param Content string
+---@param BypassCheck boolean|nil
 ---@return boolean
-function M.AddToMakefile(MakefilePath, FilePath, RootPath, Content)
-	if not Utils.IsValidSourceFile(FilePath, M.Config.SourceExtensions) then
-		vim.notify("File is not a valid source file: " .. vim.fn.fnamemodify(FilePath, ":e"), vim.log.levels.WARN)
-		return false
+function M.AddToMakefile(MakefilePath, FilePath, RootPath, Content, BypassCheck)
+	BypassCheck = BypassCheck or false
+	if not BypassCheck then
+		if not Utils.IsValidSourceFile(FilePath, M.Config.SourceExtensions) then
+			vim.notify("File is not a valid source file: " .. vim.fn.fnamemodify(FilePath, ":e"), vim.log.levels.WARN)
+			return false
+		end
 	end
 
 	local Vars = Parser.ParseVariables(Content)
@@ -374,8 +378,6 @@ function M.EditTarget(MakefilePath, FilePath, RootPath, Content, Entries, callba
 		return false
 	end
 
-	print(vim.inspect(ObjectFiles))
-
 	local picker = require("config.utils.pick")
 	if not picker.available then
 		vim.notify("Telescope is required for editing targets", vim.log.levels.ERROR)
@@ -607,7 +609,6 @@ function M.Make(Fargs)
 			end
 			vim.notify("Failed to ensure Makefile variables", vim.log.levels.ERROR)
 		end
-		print(vim.inspect(Fargs))
 		M.Make(Fargs)
 		return false
 	end
@@ -617,22 +618,25 @@ function M.Make(Fargs)
 		vim.notify("No file currently open", vim.log.levels.WARN)
 		return false
 	end
-	if #Fargs == 2 and Arg == "run" then
-		Fargs[2] = Fargs[2]:lower()
-		local RelativePath, okay = Utils.GetRelativePath(CurrentFile, Root.Path)
-		if not okay then
-			vim.notify(RelativePath, vim.log.levels.ERROR)
-			return false
-		end
-		if Fargs[2] == "split" then
-			M.RunTargetInSpilt(MakefilePath, RelativePath, MakefileContent)
-			return true
-		elseif Fargs[2] == "float" then
-			M.RunTargetInSpilt(MakefilePath, RelativePath, MakefileContent)
-			return true
-		elseif Fargs[2] == "tab" then
-			M.RunTargetInSpilt(MakefilePath, RelativePath, MakefileContent)
-			return true
+	if #Fargs == 2 then
+		if Arg == "run" or Arg == "runb" then
+			Fargs[2] = Fargs[2]:lower()
+			local RelativePath, okay = Utils.GetRelativePath(CurrentFile, Root.Path)
+			if not okay then
+				vim.notify(RelativePath, vim.log.levels.ERROR)
+				return false
+			end
+			if Fargs[2] == "split" then
+				M.RunTargetInSpilt(MakefilePath, RelativePath, MakefileContent)
+			elseif Fargs[2] == "float" then
+				M.RunTargetInSpilt(MakefilePath, RelativePath, MakefileContent)
+			elseif Fargs[2] == "tab" then
+				M.RunTargetInSpilt(MakefilePath, RelativePath, MakefileContent)
+			end
+			if Arg == "runb" then
+				local Bear = require("config.utils.make.modules.bear")
+				Bear.CurrentFile(MakefileContent, Root.Path, RelativePath)
+			end
 		end
 	end
 
@@ -640,9 +644,14 @@ function M.Make(Fargs)
 		return M.AddToMakefile(MakefilePath, CurrentFile, Root.Path, MakefileContent)
 	elseif Arg == "bearall" then
 		return require("config.utils.make.modules.bear").SelectTarget(MakefileContent, Root.Path)
-	elseif Arg == "run" then
+	elseif Arg == "run" or Arg == "runb" then
 		local RelativePath, _ = Utils.GetRelativePath(CurrentFile, Root.Path)
-		return M.RunTargetInSpilt(MakefilePath, RelativePath, MakefileContent)
+		M.RunTargetInSpilt(MakefilePath, RelativePath, MakefileContent)
+		if Arg == "runb" then
+			local Bear = require("config.utils.make.modules.bear")
+			Bear.CurrentFile(MakefileContent, Root.Path, RelativePath)
+		end
+		return true
 	elseif Arg == "build" then
 		local RelativePath, _ = Utils.GetRelativePath(CurrentFile, Root.Path)
 		M.BuildTarget(MakefilePath, RelativePath, MakefileContent)
