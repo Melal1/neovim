@@ -66,14 +66,17 @@ return {
 
 			dap.configurations.cpp = {
 				{
-					name = "Launch file",
+					name = "Attach to gdbserver :1234 ( Make )",
 					type = "cppdbg",
 					request = "launch",
-					program = function()
-						return vim.fn.input("Path to executable: ", vim.fn.getcwd() .. "/", "file")
-					end,
+					MIMode = "gdb",
+					miDebuggerServerAddress = "localhost:1234",
+					miDebuggerPath = "/run/current-system/sw/bin/gdb",
 					cwd = "${workspaceFolder}",
-					stopAtEntry = true,
+					program = function()
+						local msg = require("config.utils.debug").Debug(true)
+						return msg
+					end,
 				},
 				{
 					name = "Attach to gdbserver :1234",
@@ -87,6 +90,16 @@ return {
 						local msg = require("config.utils.debug").Debug()
 						return msg
 					end,
+				},
+				{
+					name = "Launch file",
+					type = "cppdbg",
+					request = "launch",
+					program = function()
+						return vim.fn.input("Path to executable: ", vim.fn.getcwd() .. "/", "file")
+					end,
+					cwd = "${workspaceFolder}",
+					stopAtEntry = true,
 				},
 			}
 		end,

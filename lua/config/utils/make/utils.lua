@@ -24,16 +24,19 @@ end
 ---Writes content to a file (creates a backup if file exists).
 ---@param FilePath string
 ---@param Content string
+---@param EnableBackup boolean?
 ---@return boolean success
 ---@return string? err
-function Utils.WriteFile(FilePath, Content)
-	local BackupPath = FilePath .. ".bak"
-	local OriginalContent = Utils.ReadFile(FilePath)
-	if OriginalContent then
-		local BackupFile = io.open(BackupPath, "w")
-		if BackupFile then
-			BackupFile:write(OriginalContent)
-			BackupFile:close()
+function Utils.WriteFile(FilePath, Content, EnableBackup)
+	if EnableBackup ~= false then
+		local BackupPath = FilePath .. ".bak"
+		local OriginalContent = Utils.ReadFile(FilePath)
+		if OriginalContent then
+			local BackupFile = io.open(BackupPath, "w")
+			if BackupFile then
+				BackupFile:write(OriginalContent)
+				BackupFile:close()
+			end
 		end
 	end
 

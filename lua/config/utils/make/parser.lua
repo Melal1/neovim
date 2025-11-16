@@ -23,22 +23,6 @@ function Parser.ParseVariables(Content)
 	return Variables
 end
 
----@param Content string|nil
----@param MakefileVars MakefileVars
----@return boolean
-function Parser.HasReqVars(Content, MakefileVars)
-	if not Content then
-		return false
-	end
-	local Variables = Parser.ParseVariables(Content)
-	for VarName, _ in pairs(MakefileVars) do
-		if not Variables[VarName] then
-			return false
-		end
-	end
-	return true
-end
-
 ---@class MarkerInfo
 ---@field M_start integer|nil
 ---@field M_end integer|nil

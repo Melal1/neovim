@@ -34,15 +34,17 @@ function ExeFiles(FilePath)
 	return ExeFiles, Root
 end
 
-function RunDebug(Filetype, ExecutablePath)
+function M.RunDebug(Filetype, ExecutablePath)
 	local Db = {
 		cpp = function()
 			if os.getenv("TMUX") then
 				local Cmd = string.format('gdbserver --no-startup-with-shell :1234 "%s"', ExecutablePath)
 				vim.fn.system("tmux split-window -h -l 30 " .. Cmd)
 			else
-				vim.notify("To have a console make sure you are on tmux",vim.log.levels.ERROR)
-        return
+				local Cmd = string.format('gdbserver --no-startup-with-shell :1234 "%s"', ExecutablePath)
+				local term = require("config.utils.toggleTerm")
+				term.SingleShot(Cmd)
+				return
 			end
 		end,
 	}
@@ -51,35 +53,44 @@ function RunDebug(Filetype, ExecutablePath)
 		Db[Filetype]()
 	else
 		vim.notify("No debug configuration for filetype: " .. Filetype, vim.log.levels.WARN)
-    return
+		return
 	end
 end
 
-function M.Debug()
+---@param MakeBuildFirst? boolean
+function M.Debug(MakeBuildFirst)
 	local FilePath = vim.fn.expand("%:p")
 	local Picker = require("config.utils.pick")
+	local dap = require("dap")
+
+	MakeBuildFirst = MakeBuildFirst or false
 
 	if not Picker.available then
 		vim.notify("Pickers are not available", vim.log.levels.ERROR)
-		return require("dap").ABORT
+		return dap.ABORT
+	end
+
+	if MakeBuildFirst then
+		vim.cmd("Make build")
 	end
 
 	local Files, Root = ExeFiles(FilePath)
 	if not Files then
 		vim.notify("No executable files found.", vim.log.levels.WARN)
-		return require("dap").ABORT
+		return dap.ABORT
 	end
 
 	return coroutine.create(function(dap_run_co)
 		Picker.pick_single(Files, function(selected)
 			local ExecutablePath
+
 			if selected then
 				ExecutablePath = Root.Path .. "/" .. Root.Marker .. "/" .. selected
 			else
-				ExecutablePath = require("dap").ABORT
+				ExecutablePath = dap.ABORT
 			end
 
-			RunDebug(vim.bo.filetype, ExecutablePath)
+			M.RunDebug(vim.bo.filetype, ExecutablePath)
 			coroutine.resume(dap_run_co, ExecutablePath)
 		end, { prompt_title = "Select executable to debug" })
 	end)

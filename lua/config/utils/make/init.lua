@@ -97,12 +97,6 @@ function M.AddToMakefile(MakefilePath, FilePath, RootPath, Content)
 		return false
 	end
 
-  local Success = Generator.EnsureMakefileVariables(MakefilePath,Content,M.Config.MakefileVars)
-	if not Success then
-		vim.notify("Failed to ensure Makefile variables", vim.log.levels.ERROR)
-		return false
-	end
-
 	local Vars = Parser.ParseVariables(Content)
 	local BuildDir = Vars["BUILD_DIR"]
 
@@ -188,6 +182,66 @@ function M.AddToMakefile(MakefilePath, FilePath, RootPath, Content)
 		end
 		return true
 	end
+end
+
+---@param MakefilePath string
+---@param RelativePath string
+---@param Content string
+---@return boolean
+function M.BuildTarget(MakefilePath, RelativePath, Content)
+	local Targets = GetExeTables(Content)
+	if not Targets or #Targets == 0 then
+		vim.notify("No executable targets found in Makefile", vim.log.levels.WARN)
+		return false
+	end
+
+	local BinName = ""
+	for _, Entry in ipairs(Targets) do
+		if Entry.path == RelativePath then
+			BinName = Entry.analysis.targets[2].name
+			break
+		end
+	end
+
+	if BinName == "" then
+		vim.notify("No matching target found", vim.log.levels.WARN)
+		return false
+	end
+
+	local dir = vim.fn.fnamemodify(MakefilePath, ":h")
+	local MakefileVars = Parser.ParseVariables(Content)
+	BinName = vim.fn.fnamemodify(BinName, ":t")
+	local ReExePath = MakefileVars.BUILD_DIR:gsub("^%./", "") .. "/" .. BinName
+
+	local cmd = string.format("cd %s && make %s", dir, ReExePath)
+
+	vim.system({ "sh", "-c", cmd }, { text = true }, function(obj)
+		vim.defer_fn(function()
+			vim.schedule(function()
+				if obj.code == 0 then
+					vim.notify("Build succeeded: " .. BinName, vim.log.levels.INFO, {
+						title = "Make Build",
+					})
+					return
+				end
+
+				local err_path = string.format("/tmp/%s.err", BinName)
+				if Utils.WriteFile(err_path, obj.stderr, false) then
+					vim.notify(
+						string.format("Build failed. Error saved to: %s", err_path),
+						vim.log.levels.HINT,
+						{ title = "Make Build" }
+					)
+				else
+					vim.notify("Build failed (could not write error file).", vim.log.levels.ERROR, {
+						title = "Make Build",
+					})
+				end
+			end)
+		end, 100)
+	end)
+
+	return true
 end
 
 ---@param MakefilePath string
@@ -307,11 +361,7 @@ function M.EditTarget(MakefilePath, FilePath, RootPath, Content, Entries, callba
 	local ExsistingDeps = {}
 	for _, Entry in ipairs(Entries) do
 		if Entry.path == RelativePath then
-			for _, target in ipairs(Entry.analysis.targets) do
-				if target.name == Basename then
-					ExsistingDeps = target.dependencies
-				end
-			end
+			ExsistingDeps = { unpack(Entry.analysis.targets[2].dependencies, 2) }
 		end
 	end
 
@@ -323,6 +373,8 @@ function M.EditTarget(MakefilePath, FilePath, RootPath, Content, Entries, callba
 		end
 		return false
 	end
+
+	print(vim.inspect(ObjectFiles))
 
 	local picker = require("config.utils.pick")
 	if not picker.available then
@@ -511,7 +563,7 @@ function M.Remove(MakefilePath, Content)
 end
 
 ---@param Fargs string[]
----@return boolean
+---@return boolean|nil
 function M.Make(Fargs)
 	if #Fargs > 2 then
 		vim.notify("Too many arguments. Use: add, edit, run, ...", vim.log.levels.WARN)
@@ -542,7 +594,21 @@ function M.Make(Fargs)
 
 	local MakefileContent, _ = Utils.ReadFile(MakefilePath)
 	if not MakefileContent then
-		vim.notify("Couldn't find Makefile", vim.log.levels.INFO)
+		local ans = vim.fn.input("Makefile not found. Create it? (y/n): ")
+
+		if ans ~= "y" and ans ~= "Y" then
+			return false
+		end
+
+		local Success = Generator.EnsureMakefileVariables(MakefilePath, MakefileContent, M.Config.MakefileVars)
+		if not Success then
+			if Success == nil then
+				return nil
+			end
+			vim.notify("Failed to ensure Makefile variables", vim.log.levels.ERROR)
+		end
+		print(vim.inspect(Fargs))
+		M.Make(Fargs)
 		return false
 	end
 
@@ -572,11 +638,14 @@ function M.Make(Fargs)
 
 	if Arg == "add" then
 		return M.AddToMakefile(MakefilePath, CurrentFile, Root.Path, MakefileContent)
-  elseif Arg == "bearall" then
-    return require("config.utils.make.modules.bear").SelectTarget(MakefileContent,Root.Path)
+	elseif Arg == "bearall" then
+		return require("config.utils.make.modules.bear").SelectTarget(MakefileContent, Root.Path)
 	elseif Arg == "run" then
 		local RelativePath, _ = Utils.GetRelativePath(CurrentFile, Root.Path)
 		return M.RunTargetInSpilt(MakefilePath, RelativePath, MakefileContent)
+	elseif Arg == "build" then
+		local RelativePath, _ = Utils.GetRelativePath(CurrentFile, Root.Path)
+		M.BuildTarget(MakefilePath, RelativePath, MakefileContent)
 	elseif Arg == "edit" then
 		return M.EditTarget(MakefilePath, CurrentFile, Root.Path, MakefileContent)
 	elseif Arg == "tasks" then

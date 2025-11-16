@@ -7,15 +7,32 @@ local M = {}
 ---@param success_msg? string text to show when success
 local function run_bear_async(cmd, success_msg)
 	vim.system({ "sh", "-c", cmd }, { text = true }, function(obj)
-		if obj.code == 0 then
+		vim.defer_fn(function()
 			vim.schedule(function()
-				vim.notify(success_msg or "Bear finished successfully", vim.log.levels.INFO, { title = "Make + Bear" })
+				if obj.code == 0 then
+					vim.notify(success_msg or "Bear finished successfully", vim.log.levels.INFO, {
+						title = "Make + Bear",
+					})
+					return
+				end
+
+				local err_path = "/tmp/Bearerr"
+        if Utils.WriteFile(err_path, obj.stderr,false) then
+
+					vim.notify(
+						"Bear failed. Error saved to: " .. err_path,
+						vim.log.levels.HINT,
+						{ title = "Make + Bear" }
+					)
+				else
+					vim.notify(
+						"Bear failed, but could not save /tmp/Bearerr",
+						vim.log.levels.HINT,
+						{ title = "Make + Bear" }
+					)
+				end
 			end)
-		else
-			vim.schedule(function()
-				vim.notify("Bear failed:\n" .. tostring(obj.stderr), vim.log.levels.ERROR, { title = "Make + Bear" })
-			end)
-		end
+		end, 100)
 	end)
 end
 
@@ -127,7 +144,7 @@ function M.SelectTarget(Content, Rootdir)
 		)
 		run_bear_async(cmd, "Bear finished")
 	end, { prompt_title = "Select target(s) to bear!", previewer = Picker.text_per_entry_previewer("make") })
-  return true
+	return true
 end
 
 return M

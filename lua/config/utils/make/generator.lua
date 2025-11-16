@@ -111,29 +111,30 @@ end
 ---@param MakefilePath string
 ---@param Content string|nil
 ---@param MakefileVars MakefileVars
----@return boolean success
----@return string|nil new_content_or_error
+---@return boolean|nil success
 function Generator.EnsureMakefileVariables(MakefilePath, Content, MakefileVars)
-	if not Parser.HasReqVars(Content, MakefileVars) then
+	local Variables = Parser.ParseVariables(Content)
+	for VarName, _ in pairs(MakefileVars) do
+		if not Variables[VarName] then
+			Exist = false
+			break
+		end
+	end
+
+	if not Exist then
 		local VarLines = Generator.GenerateMakefileVariables(MakefileVars)
 		local NewContent = table.concat(VarLines, "\n") .. (Content or "")
 
 		local Success, WriteErr = Utils.WriteFile(MakefilePath, NewContent)
 		if not Success then
-			return false, "Failed to add variables to Makefile: " .. WriteErr
+			vim.notify("Failed to write Makefile: " .. WriteErr, vim.log.levels.ERROR)
+			return false
 		end
 
-		local VarNames = {}
-		for VarName, _ in pairs(MakefileVars) do
-			table.insert(VarNames, VarName)
-		end
-		table.sort(VarNames)
-
-		vim.notify("Added Makefile variables (" .. table.concat(VarNames, ", ") .. ")", vim.log.levels.INFO)
-		return true, NewContent
+		return true
 	end
 
-	return true, Content
+	return true
 end
 
 return Generator
