@@ -152,6 +152,7 @@ return {
 	--MovementTrain: Hardtime
 	{
 		"m4xshen/hardtime.nvim",
+		enabled = false,
 		event = { "BufReadPost", "BufNewFile" },
 		keys = { { "<leader>lht", "<cmd>Hardtime toggle" } },
 		dependencies = { "MunifTanjim/nui.nvim" },

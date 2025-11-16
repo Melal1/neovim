@@ -18,10 +18,6 @@ return {
 					winbar = {
 						sections = { "watches", "scopes", "exceptions", "breakpoints", "threads", "repl", "console" },
 						default_section = "scopes",
-						controls = {
-							enabled = true,
-							position = "right",
-						},
 					},
 				},
 			},
@@ -36,16 +32,16 @@ return {
       { "<leader>dc", function() require("dap").continue() end, desc = "Run/Continue" },
       { "<leader>dC", function() require("dap").run_to_cursor() end, desc = "Run to Cursor" },
       { "<leader>dg", function() require("dap").goto_() end, desc = "Go to Line (No Execute)" },
-      { "<leader>di", function() require("dap").step_into() end, desc = "Step Into" },
+      { "<Right>", function() require("dap").step_into() end, desc = "Step Into" },
       { "<leader>dj", function() require("dap").down() end, desc = "Down" },
       { "<leader>dk", function() require("dap").up() end, desc = "Up" },
       { "<leader>dl", function() require("dap").run_last() end, desc = "Run Last" },
-      { "<leader>do", function() require("dap").step_out() end, desc = "Step Out" },
-      { "<leader>dO", function() require("dap").step_over() end, desc = "Step Over" },
+      { "<Up>", function() require("dap").step_out() end, desc = "Step Out" },
+      { "<Down>", function() require("dap").step_over() end, desc = "Step Over" },
       { "<leader>dP", function() require("dap").pause() end, desc = "Pause" },
       { "<leader>dr", function() require("dap").repl.toggle() end, desc = "Toggle REPL" },
       { "<leader>ds", function() require("dap").session() end, desc = "Session" },
-      { "<leader>dt", function() require("dap").terminate() end, desc = "Terminate" },
+      {"<leader>dt", function() require("dap").terminate() _G.DAP_IS_ACTIVE = false end, desc = "Terminate"},
       { "<leader>dw", function() require("dap.ui.widgets").hover() end, desc = "Widgets" },
     },
 		config = function()
@@ -102,6 +98,19 @@ return {
 					stopAtEntry = true,
 				},
 			}
+
+			dap.listeners.before.attach.st = function()
+				_G.DAP_IS_ACTIVE = true
+			end
+			dap.listeners.before.launch.st = function()
+				_G.DAP_IS_ACTIVE = true
+			end
+			dap.listeners.before.event_terminated.st = function()
+				_G.DAP_IS_ACTIVE = false
+			end
+			dap.listeners.before.event_exited.st = function()
+				_G.DAP_IS_ACTIVE = false
+			end
 		end,
 	},
 	--Flash

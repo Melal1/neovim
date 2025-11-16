@@ -320,7 +320,7 @@ return {
 			-- lazy = true,
 			name = "catppuccin",
 			priority = 1000,
-			enabled = true,
+			enabled = false,
 			config = function()
 				require("catppuccin").setup({
 					transparent_background = true,
@@ -480,7 +480,7 @@ return {
 					},
 				})
 
-				-- vim.cmd("colorscheme vague")
+				vim.cmd("colorscheme vague")
 			end,
 		},
 	},

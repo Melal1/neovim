@@ -176,22 +176,15 @@ function M.diagnostics_component()
 end
 
 -- DAP COMPONENT ----------------------------------------------------------------
-local dap_active = false
+_G.DAP_IS_ACTIVE = false
 
-local dapok, dap = pcall(require, "dap")
-if not dapok then
-	dap_active = false
-end
 function M.dap_component()
-	if not dapok then
-		return ""
-	end
-	if dap.status() == "" then
-    dap_active = false
+	if not _G.DAP_IS_ACTIVE then
 		return ""
 	end
 
-	dap_active = true
+	local dap = require("dap")
+
 	local name = vim.fn.expand("%:t")
 
 	if trunc100 then
@@ -247,20 +240,27 @@ vim.api.nvim_create_user_command("Crumb", function(o)
 	vim.notify("Usage: Crumb on | off")
 end, { nargs = 1 })
 
-
 -- RENDER -----------------------------------------------------------------------
 local breadcrumb = ""
 function M.render()
 	trunc100 = is_truncated(100)
+	local ft = vim.bo.filetype
+	local ignore = {
+		["dap-view"] = true,
+		["dap-view-term"] = true,
+		["dap-view-help"] = true,
+	}
 
-	if breadcrumb_on and not dap_active then
-		local navic = require("nvim-navic")
-		breadcrumb = navic.get_location()
-    vim.o.winbar = ""
-	else
-		if dap_active then
-			vim.o.winbar = "%{%v:lua.require'nvim-navic'.get_location()%}"
-      breadcrumb = ""
+	if not ignore[ft] then
+		if breadcrumb_on and not _G.DAP_IS_ACTIVE then
+			local navic = require("nvim-navic")
+			breadcrumb = navic.get_location()
+			vim.o.winbar = ""
+		else
+			if _G.DAP_IS_ACTIVE then
+				vim.o.winbar = "%{%v:lua.require'nvim-navic'.get_location()%}"
+				breadcrumb = ""
+			end
 		end
 	end
 
@@ -268,7 +268,7 @@ function M.render()
 		mode_component(),
 		" ",
 
-		(dap_active and "")
+		(_G.DAP_IS_ACTIVE and "")
 			or (vim.bo.buftype == "terminal" and ("%#StatusLineFileName# " .. (vim.env.SHELL and vim.fn.fnamemodify(
 				vim.env.SHELL,
 				":t"
