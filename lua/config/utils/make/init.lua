@@ -170,8 +170,6 @@ function M.AddToMakefile(MakefilePath, FilePath, RootPath, Content, BypassCheck)
 					"\nAdded executable target: " .. Basename .. " with " .. #Selected .. " dependencies",
 					vim.log.levels.INFO
 				)
-				local Bear = require("config.utils.make.modules.bear")
-				Bear.Target(Lines, RootPath, BuildDir)
 			end, { prompt_title = "Select object file dependencies" })
 		else
 			local Lines = Generator.ExecutableTarget(Basename, RelativePath, {}, M.Config.MakefileVars, RootPath)
@@ -181,8 +179,6 @@ function M.AddToMakefile(MakefilePath, FilePath, RootPath, Content, BypassCheck)
 				return false
 			end
 			vim.notify("\nAdded standalone executable target: " .. Basename, vim.log.levels.INFO)
-			local Bear = require("config.utils.make.modules.bear")
-			Bear.Target(Lines, RootPath, BuildDir)
 		end
 		return true
 	end
@@ -564,6 +560,34 @@ function M.Remove(MakefilePath, Content)
 	return true
 end
 
+---@param RootPath string where it will search for sources
+---@return boolean
+function M.PickAndAdd(RootPath, Content)
+	local picker = require("config.utils.pick")
+	if not picker.available then
+		vim.notify("\nNeed Telescope for file selection", vim.log.levels.ERROR)
+		return false
+	end
+	local results = vim.fs.find(function(name)
+		return name:match("%.cpp$") ~= nil -- change extension here
+	end, { path = RootPath, type = "file", limit = math.huge })
+
+	if #results == 0 then
+		vim.notify("No source files found in project", vim.log.levels.WARN)
+		return false
+	end
+
+	local RawEntries = Parser.AnalyzeAllSections(Content)
+	local ExistingTargets = {}
+
+	for _, Entry in ipairs(RawEntries) do
+		table.insert(ExistingTargets, Entry.path)
+	end
+
+	picker.pick_checklist(results, function(selected) end)
+	return true
+end
+
 ---@param Fargs string[]
 ---@return boolean|nil
 function M.Make(Fargs)
@@ -583,6 +607,30 @@ function M.Make(Fargs)
 
 	local MakefilePath = Root.Path .. "/Makefile"
 
+	local Stat = vim.loop.fs_stat(MakefilePath)
+	if not Stat then
+		-- This will only gettriggerd if there is another root marker other than Makefile and Makefile don't exist
+		local ans = vim.fn.input("Makefile not found. Create it? (y/n): ")
+
+		if ans ~= "y" and ans ~= "Y" then
+			return false
+		end
+
+		local Success = Generator.EnsureMakefileVariables(MakefilePath, nil, M.Config.MakefileVars)
+		if not Success then
+			if Success == nil then
+				return nil
+			end
+			vim.notify("Failed to ensure Makefile variables", vim.log.levels.ERROR)
+		end
+		if Fargs[1] == "run" or Fargs == "runb" then
+			M.Make({ "add" })
+			return false
+		end
+		M.Make(Fargs)
+		return false
+	end
+
 	if Arg == "open" then
 		if vim.loop.fs_stat(MakefilePath) then
 			vim.cmd("edit " .. vim.fn.fnameescape(MakefilePath))
@@ -595,22 +643,16 @@ function M.Make(Fargs)
 	end
 
 	local MakefileContent, _ = Utils.ReadFile(MakefilePath)
-	if not MakefileContent then
-		local ans = vim.fn.input("Makefile not found. Create it? (y/n): ")
-
-		if ans ~= "y" and ans ~= "Y" then
-			return false
-		end
-
-		local Success = Generator.EnsureMakefileVariables(MakefilePath, MakefileContent, M.Config.MakefileVars)
-		if not Success then
-			if Success == nil then
-				return nil
-			end
+	local Success = Generator.EnsureMakefileVariables(MakefilePath, MakefileContent, M.Config.MakefileVars)
+	if not Success then
+		if Success == nil then
 			vim.notify("Failed to ensure Makefile variables", vim.log.levels.ERROR)
+			return nil
 		end
 		M.Make(Fargs)
-		return false
+	end
+	if not MakefileContent then
+		MakefileContent = ""
 	end
 
 	local CurrentFile = vim.fn.expand("%:p")

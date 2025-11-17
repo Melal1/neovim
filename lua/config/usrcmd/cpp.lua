@@ -28,7 +28,6 @@ vim.api.nvim_create_autocmd("FileType", {
 					"open",
 					"edit_all",
 					"remove",
-          "tasks",
 					"analysis",
 				}
 			end,

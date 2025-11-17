@@ -547,4 +547,20 @@ function Parser.PrintAnalysisSummary(Content)
 	end
 end
 
+---@param Content string|nil
+---@param MakefileVars MakefileVars
+---@return boolean
+function Parser.HasReqVars(Content, MakefileVars)
+	if not Content then
+		return false
+	end
+	local Variables = Parser.ParseVariables(Content)
+	for VarName, _ in pairs(MakefileVars) do
+		if not Variables[VarName] then
+			return false
+		end
+	end
+	return true
+end
+
 return Parser

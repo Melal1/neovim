@@ -107,33 +107,35 @@ function Generator.ExecutableTarget(Basename, RelativePath, Dependencies, Makefi
 		true
 end
 
----Ensure the required Makefile variables are present in the file content.
+---Ensure the required Makefile variables are present in the file content will return true if it there false if it's not nil for failing
 ---@param MakefilePath string
 ---@param Content string|nil
 ---@param MakefileVars MakefileVars
 ---@return boolean|nil success
 function Generator.EnsureMakefileVariables(MakefilePath, Content, MakefileVars)
-	local Variables = Parser.ParseVariables(Content)
-	for VarName, _ in pairs(MakefileVars) do
-		if not Variables[VarName] then
-			Exist = false
-			break
+	if not Parser.HasReqVars(Content, MakefileVars) then
+		local Variables = Parser.ParseVariables(Content)
+		for VarName, _ in pairs(MakefileVars) do
+			if not Variables[VarName] then
+				Exist = false
+				break
+			end
 		end
-	end
 
-	if not Exist then
-		local VarLines = Generator.GenerateMakefileVariables(MakefileVars)
-		local NewContent = table.concat(VarLines, "\n") .. (Content or "")
+		if not Exist then
+			local VarLines = Generator.GenerateMakefileVariables(MakefileVars)
+			local NewContent = table.concat(VarLines, "\n") .. (Content or "")
 
-		local Success, WriteErr = Utils.WriteFile(MakefilePath, NewContent)
-		if not Success then
-			vim.notify("Failed to write Makefile: " .. WriteErr, vim.log.levels.ERROR)
+			local Success, WriteErr = Utils.WriteFile(MakefilePath, NewContent)
+			if not Success then
+				vim.notify("Failed to write Makefile: " .. WriteErr, vim.log.levels.ERROR)
+				return nil
+			end
+
+			print("Triggerd")
 			return false
 		end
-
-		return true
 	end
-
 	return true
 end
 
