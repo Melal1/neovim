@@ -660,39 +660,44 @@ function M.Make(Fargs)
 		vim.notify("No file currently open", vim.log.levels.WARN)
 		return false
 	end
-	if #Fargs == 2 then
-		if Arg == "run" or Arg == "runb" then
-			Fargs[2] = Fargs[2]:lower()
-			local RelativePath, okay = Utils.GetRelativePath(CurrentFile, Root.Path)
-			if not okay then
-				vim.notify(RelativePath, vim.log.levels.ERROR)
-				return false
-			end
-			if Fargs[2] == "split" then
-				M.RunTargetInSpilt(MakefilePath, RelativePath, MakefileContent)
-			elseif Fargs[2] == "float" then
-				M.RunTargetInSpilt(MakefilePath, RelativePath, MakefileContent)
-			elseif Fargs[2] == "tab" then
-				M.RunTargetInSpilt(MakefilePath, RelativePath, MakefileContent)
-			end
-			if Arg == "runb" then
-				local Bear = require("config.utils.make.modules.bear")
-				Bear.CurrentFile(MakefileContent, Root.Path, RelativePath)
-			end
-		end
-	end
+	-- if #Fargs == 2 then
+	-- 	if Arg == "run" or Arg == "runb" then
+	-- 		Fargs[2] = Fargs[2]:lower()
+	-- 		local RelativePath, okay = Utils.GetRelativePath(CurrentFile, Root.Path)
+	-- 		if not okay then
+	-- 			vim.notify(RelativePath, vim.log.levels.ERROR)
+	-- 			return false
+	-- 		end
+	-- 		if Fargs[2] == "split" then
+	-- 			M.RunTargetInSpilt(MakefilePath, RelativePath, MakefileContent)
+	-- 		elseif Fargs[2] == "float" then
+	-- 			M.RunTargetInSpilt(MakefilePath, RelativePath, MakefileContent)
+	-- 		elseif Fargs[2] == "tab" then
+	-- 			M.RunTargetInSpilt(MakefilePath, RelativePath, MakefileContent)
+	-- 		end
+	-- 		if Arg == "runb" then
+	-- 			local Bear = require("config.utils.make.modules.bear")
+	-- 			Bear.CurrentFile(MakefileContent, Root.Path, RelativePath, function()
+	-- 				M.Make({ "run" })
+	-- 			end)
+	-- 		end
+	-- 	end
+	-- end
 
 	if Arg == "add" then
 		return M.AddToMakefile(MakefilePath, CurrentFile, Root.Path, MakefileContent)
 	elseif Arg == "bearall" then
 		return require("config.utils.make.modules.bear").SelectTarget(MakefileContent, Root.Path)
-	elseif Arg == "run" or Arg == "runb" then
+	elseif Arg == "run" then
 		local RelativePath, _ = Utils.GetRelativePath(CurrentFile, Root.Path)
 		M.RunTargetInSpilt(MakefilePath, RelativePath, MakefileContent)
-		if Arg == "runb" then
-			local Bear = require("config.utils.make.modules.bear")
-			Bear.CurrentFile(MakefileContent, Root.Path, RelativePath)
-		end
+		return true
+	elseif Arg == "runb" then
+		local Bear = require("config.utils.make.modules.bear")
+		local RelativePath, _ = Utils.GetRelativePath(CurrentFile, Root.Path)
+		Bear.CurrentFile(MakefileContent, Root.Path, RelativePath, function()
+			M.Make({ "run" })
+		end)
 		return true
 	elseif Arg == "build" then
 		local RelativePath, _ = Utils.GetRelativePath(CurrentFile, Root.Path)

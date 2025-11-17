@@ -5,7 +5,8 @@ local Utils = require("config.utils.make.utils")
 local M = {}
 ---@param cmd string commands to run
 ---@param success_msg? string text to show when success
-local function run_bear_async(cmd, success_msg)
+---@param Callback function|nil
+local function run_bear_async(cmd, success_msg, Callback)
 	vim.system({ "sh", "-c", cmd }, { text = true }, function(obj)
 		vim.defer_fn(function()
 			vim.schedule(function()
@@ -13,6 +14,9 @@ local function run_bear_async(cmd, success_msg)
 					vim.notify(success_msg or "Bear finished successfully", vim.log.levels.INFO, {
 						title = "Make + Bear",
 					})
+					if Callback then
+						Callback()
+					end
 					return
 				end
 
@@ -39,8 +43,9 @@ end
 ---@param Content string Makefile content
 ---@param Rootdir string Root directory of the project
 ---@param RelativePath string|nil
+---@param Callback function|nil
 ---@return boolean success True if cmd sent ( Regarding cmd errors)
-function M.CurrentFile(Content, Rootdir, RelativePath)
+function M.CurrentFile(Content, Rootdir, RelativePath, Callback)
 	local Vars = Parser.ParseVariables(Content)
 	local BuildDir = Vars["BUILD_DIR"]
 	RelativePath = RelativePath or Utils.GetRelativePath(vim.fn.expand("%"), Rootdir)
@@ -62,7 +67,7 @@ function M.CurrentFile(Content, Rootdir, RelativePath)
 						vim.fn.shellescape(ModifiedName)
 					)
 
-					run_bear_async(cmd, "Bear finished")
+					run_bear_async(cmd, "Bear finished", Callback)
 
 					return true
 				end
