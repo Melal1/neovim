@@ -4,6 +4,8 @@ vim.lsp.enable({
 	"ruff",
 	"clangd",
 	"nil_ls",
+  "jsonls",
+  -- "harper_ls",
 })
 
 vim.api.nvim_create_autocmd("LspAttach", {
