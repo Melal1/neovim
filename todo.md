@@ -14,14 +14,15 @@
 - [ ] Open help vertically
 - [ ] Resize splits when the window is resized
 - [ ] Stop continuing auto-comment
-- [ ] Add cursor line background highlight
+- [x] Add cursor line background highlight
+- [ ] Better auto pair ( key to disable them for just one norm mode exit)
+- [ ] Fix Blink on function parameters when start with letter d
+- [x] Fix Dap Virtual text glitch
 
 ## Neovim Plugins / LSP
 - [ ] Replace UFO with Origami
 - [ ] Highlight symbol on hover using LSP (src: smnatale)
 - [ ] Add Navic for Python LSP
-- [ ] Add function to print current LSP clients
+- [x] Add function to print current LSP clients
 
-## Hyprland / Desktop
-- [ ] Improve swaync animations on laptop setup
 

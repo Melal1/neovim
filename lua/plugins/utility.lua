@@ -42,7 +42,12 @@ return {
       { "<leader>dP", function() require("dap").pause() end, desc = "Pause" },
       { "<leader>dr", function() require("dap").repl.toggle() end, desc = "Toggle REPL" },
       { "<leader>ds", function() require("dap").session() end, desc = "Session" },
-      {"<leader>dt", function() require("dap").terminate() _G.DAP_IS_ACTIVE = false end, desc = "Terminate"},
+      {"<leader>dt", function()
+        require("dap").terminate()
+        _G.DAP_IS_ACTIVE = false
+        vim.cmd("DapVirtualTextToggle")
+        vim.cmd("DapVirtualTextToggle")
+      end, desc = "Terminate"},
       { "<leader>dw", function() require("dap.ui.widgets").hover() end, desc = "Widgets" },
     },
 		config = function()
@@ -120,8 +125,12 @@ return {
 			dap.listeners.before.event_terminated.st = function()
 				_G.DAP_IS_ACTIVE = false
 			end
+        vim.cmd("DapVirtualTextToggle")
+        vim.cmd("DapVirtualTextToggle")
 			dap.listeners.before.event_exited.st = function()
 				_G.DAP_IS_ACTIVE = false
+        vim.cmd("DapVirtualTextToggle")
+        vim.cmd("DapVirtualTextToggle")
 			end
 		end,
 	},
