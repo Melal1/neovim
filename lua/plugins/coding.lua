@@ -111,7 +111,7 @@ return {
 
 			cmdline = {
 				completion = {
-					ghost_text = { enabled = true },
+					ghost_text = { enabled = false },
 				},
 				keymap = {
 					preset = "default",
@@ -122,7 +122,7 @@ return {
 
 			completion = {
 				ghost_text = {
-					enabled = true,
+					enabled = false,
 					show_with_menu = false,
 				},
 				menu = {

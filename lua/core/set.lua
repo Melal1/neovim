@@ -61,3 +61,8 @@ vim.api.nvim_set_hl(0, "CursorLine", { bg = "#1b1b26", bold = true }) -- example
 -- ========================================
 -- Other
 -- ========================================
+-- Neovide
+
+vim.g.neovide_opacity = 0.8
+vim.g.neovide_refresh_rate = 400
+vim.g.neovide_font = "FiraCode Nerd Font:h14"
