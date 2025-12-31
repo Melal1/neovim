@@ -131,8 +131,6 @@ function Generator.EnsureMakefileVariables(MakefilePath, Content, MakefileVars)
 				vim.notify("Failed to write Makefile: " .. WriteErr, vim.log.levels.ERROR)
 				return nil
 			end
-
-			print("Triggerd")
 			return false
 		end
 	end

@@ -588,6 +588,34 @@ function M.PickAndAdd(RootPath, Content)
 	return true
 end
 
+function M.FastRun()
+	local Path = vim.fn.expand("%:p:h") .. "/Makefile"
+	local Stat = vim.loop.fs_stat(Path)
+	local FilePath = vim.fn.expand("%:p")
+	local RelativePath = Utils.GetRelativePath(FilePath, vim.fn.fnamemodify(Path, ":h"))
+	if Stat then
+		local MakefileContent, _ = Utils.ReadFile(Path)
+		if not MakefileContent or MakefileContent == "" then
+			goto CONST
+		end
+		if TargetExists(MakefileContent, RelativePath) then
+			M.Make({ "run" })
+			return
+		else
+		end
+	end
+	::CONST::
+	Generator.EnsureMakefileVariables(Path, nil, M.Config.MakefileVars)
+	local Basename = vim.fn.fnamemodify(FilePath, ":t:r")
+	local Lines = Generator.ExecutableTarget(Basename, RelativePath, {}, M.Config.MakefileVars, RelativePath)
+	local AppendSuccess, WriteErr = Utils.AppendToFile(Path, Lines)
+	if not AppendSuccess then
+		vim.notify("\nFailed to write to Makefile: " .. WriteErr, vim.log.levels.ERROR)
+		return false
+	end
+	M.Make({ "run" })
+end
+
 ---@param Fargs string[]
 ---@return boolean|nil
 function M.Make(Fargs)
