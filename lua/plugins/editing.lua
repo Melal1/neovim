@@ -59,36 +59,28 @@ return {
 		"nvim-mini/mini.pairs",
 		version = false,
 		event = "InsertEnter",
-		config = function()
-			require("mini.pairs").setup()
-		end,
+		opts = {},
 	},
 	--Comment: Mini.comment
 	{
 		"nvim-mini/mini.comment",
 		version = false,
 		event = "BufReadPost",
-		config = function()
-			require("mini.comment").setup()
-		end,
+		opts = {},
 	},
 	--Surround: Mini.Surround
 	{
 		"echasnovski/mini.surround",
 		version = false,
 		event = "InsertEnter",
-		config = function()
-			require("mini.surround").setup()
-		end,
+		opts = {},
 	},
 	--Text-object: Mini.ai
 	{
 		"echasnovski/mini.ai",
 		version = false,
 		event = "InsertEnter",
-		config = function()
-			require("mini.ai").setup()
-		end,
+		opts = {},
 	},
 	--Treesitter-text-object
 	{
@@ -265,5 +257,116 @@ return {
 			vim.keymap.set({ "n", "x", "o" }, "<leader>;", ts_repeat_move.repeat_last_move)
 			vim.keymap.set({ "n", "x", "o" }, "<leader>,", ts_repeat_move.repeat_last_move_opposite)
 		end,
+	},
+	{
+		"gbprod/substitute.nvim",
+		opts = {
+			yank_substituted_text = false,
+			preserve_cursor_position = true,
+			range = {
+				prompt_current_text = true,
+				group_substituted_text = true,
+			},
+			exchange = {
+				preserve_cursor_position = true,
+			},
+		},
+		keys = {
+			{
+				"s",
+				mode = { "n" },
+				function()
+					require("substitute").operator({
+						modifiers = function(state)
+							if state.vmode == "char" then
+								return { "trim" }
+							end
+						end,
+					})
+				end,
+				desc = "Substitute",
+			},
+			{
+				"ss",
+				mode = { "n" },
+				function()
+					require("substitute").line({
+						modifiers = { "reindent" },
+					})
+				end,
+				desc = "Substitute line",
+			},
+			{
+				"s",
+				mode = { "x" },
+				function()
+					require("substitute").visual()
+				end,
+				desc = "Substitute",
+			},
+			{
+				")s",
+				mode = { "n", "x" },
+				function()
+					require("substitute").operator({
+						modifiers = { "linewise" },
+					})
+				end,
+				desc = "Substitute linewise",
+			},
+			{
+				"=s",
+				mode = { "n" },
+				function()
+					require("substitute").operator({
+						modifiers = { "linewise", "reindent" },
+					})
+				end,
+				desc = "Substitute linewise and reindent",
+			},
+			{
+				"]s",
+				mode = { "n" },
+				function()
+					require("substitute").operator({
+						modifiers = require("substitute.modifiers").build({ "join", "trim" }),
+					})
+				end,
+				desc = "Substitute linewise and join",
+			},
+
+			{
+				"sx",
+				mode = { "n" },
+				function()
+					require("substitute.exchange").operator()
+				end,
+				desc = "Exchange",
+			},
+			{
+				"sxx",
+				mode = { "n" },
+				function()
+					require("substitute.exchange").line()
+				end,
+				desc = "Exchange line",
+			},
+			{
+				"X",
+				mode = { "x" },
+				function()
+					require("substitute.exchange").visual()
+				end,
+				desc = "Exchange",
+			},
+			{
+				"sxc",
+				mode = { "n" },
+				function()
+					require("substitute.exchange").cancel()
+				end,
+				desc = "Exchange cancel",
+			},
+		},
 	},
 }

@@ -3,3 +3,4 @@ todo.md
 neovim_tips/user_tips.md
 gitcommit.sh
 .gitignore
+lua/config/test.lua

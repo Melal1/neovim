@@ -242,14 +242,14 @@ end, { nargs = 1 })
 
 -- RENDER -----------------------------------------------------------------------
 local breadcrumb = ""
-function M.render()
-	trunc100 = is_truncated(100)
-	local ft = vim.bo.filetype
 	local ignore = {
 		["dap-view"] = true,
 		["dap-view-term"] = true,
 		["dap-view-help"] = true,
 	}
+function M.render()
+	trunc100 = is_truncated(100)
+	local ft = vim.bo.filetype
 
 	if not ignore[ft] then
 		if breadcrumb_on and not _G.DAP_IS_ACTIVE then
