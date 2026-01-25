@@ -4,23 +4,24 @@ vim.lsp.enable({
 	"ruff",
 	"clangd",
 	"nil_ls",
-  "jsonls",
-  -- "harper_ls",
+	"jsonls",
+	"qmlls",
+	-- "harper_ls",
 })
 
 vim.api.nvim_create_autocmd("LspAttach", {
-  group = vim.api.nvim_create_augroup('lsp_attach_disable_ruff_hover', { clear = true }),
-  callback = function(args)
-    local client = vim.lsp.get_client_by_id(args.data.client_id)
-    if client == nil then
-      return
-    end
-    if client.name == 'ruff' then
-      -- Disable hover in favor of Pyright
-      client.server_capabilities.hoverProvider = false
-    end
-  end,
-  desc = 'LSP: Disable hover capability from Ruff',
+	group = vim.api.nvim_create_augroup("lsp_attach_disable_ruff_hover", { clear = true }),
+	callback = function(args)
+		local client = vim.lsp.get_client_by_id(args.data.client_id)
+		if client == nil then
+			return
+		end
+		if client.name == "ruff" then
+			-- Disable hover in favor of Pyright
+			client.server_capabilities.hoverProvider = false
+		end
+	end,
+	desc = "LSP: Disable hover capability from Ruff",
 })
 
 vim.opt.winborder = "rounded"
@@ -76,8 +77,8 @@ vim.keymap.set("n", "td", function()
 end, { desc = "Toggle diagnostics" })
 
 vim.keymap.set("n", "<leader>ga", function()
-  local clients = vim.lsp.get_active_clients()
-  for _,c in ipairs(clients) do
-    vim.notify(vim.inspect(c.name))
-  end
+	local clients = vim.lsp.get_active_clients()
+	for _, c in ipairs(clients) do
+		vim.notify(vim.inspect(c.name))
+	end
 end)
