@@ -130,10 +130,6 @@ map("n", "<C-left>", "1<C-w><", { silent = true, desc = "Decrease window width" 
 
 map("n", "<C-c>", "<C-o><", { noremap = true, silent = true, desc = "Unmapped placeholder key" })
 
-map("n", "<leader>rlt", function()
-	vim.cmd.colorscheme(require("config.utils.theme").apply_theme())
-end, { desc = "Reload colorscheme" })
-
 map("n", "+", function()
 	require("config.utils.togglebool").toggleBool(true)
 end, { desc = "Toggle bool" })

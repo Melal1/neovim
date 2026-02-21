@@ -1,4 +1,3 @@
-local theme = require("config.utils.theme").apply_theme()
 
 --Diagnostics: tiny-inline
 

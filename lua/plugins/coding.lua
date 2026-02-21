@@ -1,3 +1,47 @@
+local icons = {
+	Namespace = "󰌗",
+	Text = "󰉿",
+	Method = "󰆧",
+	Function = "󰆧",
+	Constructor = "",
+	Field = "󰜢",
+	Variable = "󰀫",
+	Class = "󰠱",
+	Interface = "",
+	Module = "",
+	Property = "󰜢",
+	Unit = "󰑭",
+	Value = "󰎠",
+	Enum = "",
+	Keyword = "󰌋",
+	Snippet = "",
+	Color = "󱓻",
+	File = "󰈚",
+	Reference = "󰈇",
+	Folder = "󰉋",
+	EnumMember = "",
+	Constant = "󰏿",
+	Struct = "󰙅",
+	Event = "",
+	Operator = "󰆕",
+	TypeParameter = "󰊄",
+	Table = "",
+	Object = "󰅩",
+	Tag = "",
+	Array = "[]",
+	Boolean = "",
+	Number = "",
+	Null = "󰟢",
+	Supermaven = "",
+	String = "󰉿",
+	Calendar = "",
+	Watch = "󰥔",
+	Package = "",
+	Copilot = "",
+	Codeium = "",
+	TabNine = "",
+	BladeNav = "",
+}
 return {
 
 	--Linting: none-ls
@@ -49,15 +93,22 @@ return {
 				formatters = {
 					clang_format = {
 						prepend_args = {
-							"--style={BasedOnStyle: LLVM, \
-            IndentWidth: 2, \
-            UseTab: Never, \
-            ColumnLimit: 9999,\
-            BreakBeforeBraces: Allman, \
-            AlignArrayOfStructures: None,\
-            SeparateDefinitionBlocks: Always,\
-            EmptyLineBeforeAccessModifier: LogicalBlock,\
-            AllowShortFunctionsOnASingleLine: None}",
+							"--style={ \
+        BasedOnStyle: LLVM, \
+        IndentWidth: 2, \
+        UseTab: Never, \
+        ColumnLimit: 120, \
+        BreakBeforeBraces: Allman, \
+        AlignArrayOfStructures: None, \
+        SeparateDefinitionBlocks: Always, \
+        EmptyLineBeforeAccessModifier: LogicalBlock, \
+        AllowShortFunctionsOnASingleLine: None, \
+        BinPackArguments: false, \
+        BinPackParameters: false, \
+        AlignAfterOpenBracket: AlwaysBreak, \
+        AllowAllArgumentsOnNextLine: true, \
+        AllowAllParametersOfDeclarationOnNextLine: true, \
+      }",
 						},
 					},
 				},
@@ -106,7 +157,7 @@ return {
 			signature = { enabled = true },
 
 			appearance = {
-				nerd_font_variant = "mono",
+				nerd_font_variant = "normal",
 			},
 
 			cmdline = {
@@ -121,36 +172,74 @@ return {
 			},
 
 			completion = {
+				accept = {
+					create_undo_point = true,
+					auto_brackets = {
+						-- Whether to auto-insert brackets for functions
+						enabled = true,
+					},
+				},
 				ghost_text = {
 					enabled = false,
 					show_with_menu = false,
 				},
 				menu = {
+					scrollbar = false,
 					auto_show = false,
+					border = "single",
 					draw = {
+						padding = { 1, 1 },
 						components = {
-							source_name = {
+							kind_icon = {
+								highlight = function(ctx)
+									return ctx.kind
+								end,
 								text = function(ctx)
-									if ctx.source_name == "LSP" then
-										return "[LSP]"
+									local icon = (icons[ctx.kind] or "󰈚")
+									return icon
+								end,
+							},
+
+							kind = {
+								highlight = function(ctx)
+									return ctx.kind
+								end,
+							},
+							label = {
+								width = { fill = true, max = 60 },
+								text = function(ctx)
+									return ctx.label .. ctx.label_detail
+								end,
+								highlight = function(ctx)
+									-- label and label details
+									local highlights = {
+										{
+											0,
+											#ctx.label,
+											group = ctx.deprecated and "BlinkCmpLabelDeprecated" or "BlinkCmpLabel",
+										},
+									}
+									if ctx.label_detail then
+										table.insert(
+											highlights,
+											{ #ctx.label, #ctx.label + #ctx.label_detail, group = "BlinkCmpLabelDetail" }
+										)
 									end
-									if ctx.source_name == "Snippets" then
-										return "[SNIP]"
+
+									-- characters matched on the label by the fuzzy matcher
+									for _, idx in ipairs(ctx.label_matched_indices) do
+										table.insert(highlights, { idx, idx + 1, group = "BlinkCmpLabelMatch" })
 									end
-									if ctx.source_name == "Buffer" then
-										return "[BUF]"
-									end
-									if ctx.source_name == "Path" then
-										return "[PATH]"
-									end
+
+									return highlights
 								end,
 							},
 						},
-						gap = 2,
+						-- gap = 2,
 						columns = {
-							{ "source_name", gap = 1 },
-							{ "label", "label_description", gap = 1 },
-							{ "kind_icon", "kind", gap = 2 },
+							{ "kind_icon" },
+							{ "label" },
+							{ "kind" },
 						},
 					},
 				},

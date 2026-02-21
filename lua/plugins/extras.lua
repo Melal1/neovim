@@ -1,3 +1,4 @@
+math.randomseed(os.time())
 return {
 	--Markdown
 	{
@@ -175,8 +176,11 @@ return {
 		build = ":Cord update",
 		opts = {
 			display = {
-				theme = "atom",
+				theme = (math.random(0, 1) == 0) and "minecraft" or "classic",
 				flavor = "dark",
+			},
+			editor = {
+				tooltip = "Snowflake",
 			},
 		},
 	},

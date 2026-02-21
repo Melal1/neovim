@@ -10,7 +10,8 @@ vim.api.nvim_create_autocmd("TextYankPost", {
 })
 
 -- Highlights
-local CommentErrorFg = vim.api.nvim_get_hl(0, { name = "DiagnosticError" }).fg
+-- local CommentErrorFg = vim.api.nvim_get_hl(0, { name = "DiagnosticError" }).fg
+local PmenuSelFg = vim.api.nvim_get_hl(0, { name = "@function.call" }).fg
 local highlights = {
 	-- Navbuddy
 	NavbuddyFile = { link = "@lsp.type.comment" },
@@ -70,8 +71,9 @@ local highlights = {
 	NavicIconsTypeParameter = { link = "@lsp.type.TypeParameter" },
 	NavicText = { link = "@text" },
 	NavicSeparator = { link = "@punctuation" },
+  -- MatchParen = { fg = CommentErrorFg, bg = "fg", bold = true },
+  PmenuSel = { fg = "#141415", bg = PmenuSelFg, bold = true },
 
-	MatchParen = { fg = CommentErrorFg, bg = "fg", bold = true },
 }
 
 for hlName, option in pairs(highlights) do

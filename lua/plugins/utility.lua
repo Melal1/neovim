@@ -125,12 +125,12 @@ return {
 			dap.listeners.before.event_terminated.st = function()
 				_G.DAP_IS_ACTIVE = false
 			end
-        vim.cmd("DapVirtualTextToggle")
-        vim.cmd("DapVirtualTextToggle")
+			vim.cmd("DapVirtualTextToggle")
+			vim.cmd("DapVirtualTextToggle")
 			dap.listeners.before.event_exited.st = function()
 				_G.DAP_IS_ACTIVE = false
-        vim.cmd("DapVirtualTextToggle")
-        vim.cmd("DapVirtualTextToggle")
+				vim.cmd("DapVirtualTextToggle")
+				vim.cmd("DapVirtualTextToggle")
 			end
 		end,
 	},
@@ -241,10 +241,17 @@ return {
 					prompt_prefix = "    ",
 					selection_caret = " ",
 					file_ignore_patterns = { "node_modules", "package-lock.json", "lazy-lock.json" },
+					scroll_strategy = "limit", -- don't rollover when scrolling
 					initial_mode = "insert",
 					select_strategy = "reset",
 					sorting_strategy = "ascending",
 					color_devicons = true,
+					border = true,
+					borderchars = {
+						prompt = { "─", "│", "─", "│", "┌", "┐", "│", "│" },
+						results = { "─", "│", "─", "│", "├", "┤", "┘", "└" },
+						preview = { "─", "│", "─", "│", "┌", "┐", "┘", "└" },
+					},
 					set_env = { ["COLORTERM"] = "truecolor" }, -- default = nil,
 					layout_config = {
 						prompt_position = "top",
@@ -291,22 +298,6 @@ return {
 					},
 				},
 				extensions = {
-					aerial = {
-						-- Set the width of the first two columns (the second
-						-- is relevant only when show_columns is set to 'both')
-						col1_width = 4,
-						col2_width = 30,
-						-- How to format the symbols
-						format_symbol = function(symbol_path, filetype)
-							if filetype == "json" or filetype == "yaml" then
-								return table.concat(symbol_path, ".")
-							else
-								return symbol_path[#symbol_path]
-							end
-						end,
-						-- Available modes: symbols, lines, both
-						show_columns = "both",
-					},
 					["ui-select"] = {
 						require("telescope.themes").get_dropdown({
 							previewer = false,
@@ -531,6 +522,25 @@ return {
 		end,
 	},
 	--Git
+	{
+		"NeogitOrg/neogit",
+		lazy = true,
+		dependencies = {
+			"nvim-lua/plenary.nvim", -- required
+
+			"sindrets/diffview.nvim",
+
+			"nvim-telescope/telescope.nvim",
+		},
+		opts = {
+			graph_style = "kitty",
+		},
+
+		cmd = "Neogit",
+		keys = {
+			{ "<leader>gg", "<cmd>Neogit<cr>", desc = "Show Neogit UI" },
+		},
+	},
 	{
 		"lewis6991/gitsigns.nvim",
 		-- event = "BufRead",
