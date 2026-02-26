@@ -115,4 +115,19 @@ function Utils.GetRelativePath(FilePath, RootPath)
 	end
 end
 
+---Standardized notifications for MakeNvim.
+---@param Message string
+---@param Level integer|nil
+---@param Opts table|nil
+function Utils.Notify(Message, Level, Opts)
+	local msg = vim.trim(Message or "")
+	if msg == "" then
+		return
+	end
+	if not msg:match("^MakeNvim:%s") then
+		msg = "MakeNvim: " .. msg
+	end
+	vim.notify(msg, Level or vim.log.levels.INFO, Opts)
+end
+
 return Utils

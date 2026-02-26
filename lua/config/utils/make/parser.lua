@@ -3,6 +3,140 @@ local Utils = require("config.utils.make.utils")
 ---@class Parser
 local Parser = {}
 
+Parser.CacheRoot = nil
+Parser.CacheMakefilePath = nil
+Parser.CacheLog = true
+Parser.CacheUseHash = true
+
+---@param root_path string|nil
+---@param makefile_path string|nil
+function Parser.SetCacheRoot(root_path, makefile_path)
+	if root_path and root_path ~= "" then
+		Parser.CacheRoot = root_path
+	end
+	if makefile_path and makefile_path ~= "" then
+		Parser.CacheMakefilePath = makefile_path
+	end
+end
+
+local function cache_key_for(root_path)
+	local normalized = vim.fn.fnamemodify(root_path or "", ":p")
+	normalized = normalized:gsub("\\", "/")
+	normalized = normalized:gsub("^/", "")
+	normalized = normalized:gsub(":", "_")
+	normalized = normalized:gsub("/", "_")
+	if normalized == "" then
+		return "default"
+	end
+	return normalized
+end
+
+local function cache_file_for(root_path)
+	local base = vim.fn.expand("~/.cache/MakeNvim")
+	return base .. "/" .. cache_key_for(root_path) .. ".json"
+end
+
+local function log_cache(message)
+	if not Parser.CacheLog then
+		return
+	end
+	vim.notify(message, vim.log.levels.DEBUG)
+end
+
+local function read_makefile_content(makefile_path)
+	if not makefile_path or makefile_path == "" then
+		return nil
+	end
+	return Utils.ReadFile(makefile_path)
+end
+
+local function try_load_cache(root_path, makefile_path, content)
+	local cache_file = cache_file_for(root_path or vim.fn.getcwd())
+	if not vim.loop.fs_stat(cache_file) then
+		return nil, nil, cache_file
+	end
+
+	local raw = Utils.ReadFile(cache_file)
+	if not raw or raw == "" then
+		return nil, nil, cache_file
+	end
+
+	local ok_decode, decoded = pcall(vim.fn.json_decode, raw)
+	if not ok_decode or not decoded or type(decoded.sections) ~= "table" then
+		return nil, nil, cache_file
+	end
+
+	if makefile_path and makefile_path ~= "" then
+		local stat = vim.loop.fs_stat(makefile_path)
+		if stat and decoded.mtime == stat.mtime.sec and decoded.size == stat.size then
+			log_cache("MakeNvim cache hit (mtime/size)")
+			return decoded.sections
+		end
+		if not Parser.CacheUseHash then
+			log_cache("MakeNvim cache miss (mtime/size changed)")
+			return nil, nil, cache_file
+		end
+	end
+
+	if not Parser.CacheUseHash then
+		log_cache("MakeNvim cache miss (hash disabled)")
+		return nil, nil, cache_file
+	end
+
+	if not content then
+		content = read_makefile_content(makefile_path)
+	end
+	if not content then
+		log_cache("MakeNvim cache miss (no content for hash)")
+		return nil, nil, cache_file
+	end
+
+	local ok_hash, hash = pcall(vim.fn.sha256, content)
+	if not ok_hash then
+		log_cache("MakeNvim cache miss (hash error)")
+		return nil, nil, cache_file
+	end
+
+	if decoded.hash ~= hash then
+		log_cache("MakeNvim cache miss (hash mismatch)")
+		return nil, hash, cache_file
+	end
+
+	log_cache("MakeNvim cache hit (hash)")
+	return decoded.sections, hash, cache_file
+end
+
+local function write_cache(cache_file, sections, makefile_path, content)
+	if not cache_file then
+		return
+	end
+	vim.fn.mkdir(vim.fn.expand("~/.cache/MakeNvim"), "p")
+	local payload = { sections = sections }
+	if makefile_path and makefile_path ~= "" then
+		local stat = vim.loop.fs_stat(makefile_path)
+		if stat then
+			payload.mtime = stat.mtime.sec
+			payload.size = stat.size
+		end
+	end
+	if Parser.CacheUseHash then
+		if not content and makefile_path and makefile_path ~= "" then
+			content = read_makefile_content(makefile_path)
+		end
+		if content then
+			local ok_hash, hash = pcall(vim.fn.sha256, content)
+			if ok_hash then
+				payload.hash = hash
+			end
+		end
+	end
+	local ok_encode, encoded = pcall(vim.fn.json_encode, payload)
+	if not ok_encode or not encoded then
+		return
+	end
+	Utils.WriteFile(cache_file, encoded, false)
+end
+
 ---@param Content string|nil
 ---@return table<string, string>
 function Parser.ParseVariables(Content)
@@ -197,6 +331,74 @@ function Parser.ParseDependencies(targetLine)
 	return dependencies
 end
 
+---@param sectionContent string
+---@param baseName string|nil
+---@return string|nil
+function Parser.FindExecutableTargetName(sectionContent, baseName)
+	local fallback = nil
+	for line in sectionContent:gmatch("[^\n]+") do
+		local trimmedLine = line:match("^%s*(.-)%s*$")
+		if trimmedLine == "" or trimmedLine:match("^#") then
+			goto continue
+		end
+		if trimmedLine:match("^%s*[^:]+%s*:%s*LINKS%s*[%+:%?]?=") then
+			goto continue
+		end
+		if trimmedLine:match("^%s*[^:]+%s*:%s*LINKS%s*[%+:%?]?=") then
+			goto continue
+		end
+		if trimmedLine:match("^%s*[^:]+%s*:%s*LINKS%s*[%+:%?]?=") then
+			goto continue
+		end
+
+		local targetName = trimmedLine:match("^([^:]+):")
+		if targetName then
+			targetName = targetName:match("^%s*(.-)%s*$")
+			if not targetName:match("%.o%s*$") and not targetName:match("^run") then
+				if baseName then
+					local escapedBase = Utils.EscapePattern(baseName)
+					if
+						targetName == baseName
+						or targetName:match("/" .. escapedBase .. "$")
+						or targetName:match("%$%(BUILD_DIR%)/" .. escapedBase .. "$")
+					then
+						return targetName
+					end
+				end
+				fallback = fallback or targetName
+			end
+		end
+
+		::continue::
+	end
+
+	return fallback
+end
+
+---@param sectionContent string
+---@param targetName string
+---@return string[]
+function Parser.GetLinksForTarget(sectionContent, targetName)
+	local links = {}
+	if not targetName or targetName == "" then
+		return links
+	end
+
+	local targetPattern = "^%s*" .. Utils.EscapePattern(targetName) .. "%s*:%s*LINKS%s*[%+:%?]?=%s*(.*)$"
+	for line in sectionContent:gmatch("[^\n]+") do
+		local trimmedLine = line:match("^%s*(.-)%s*$")
+		local match = trimmedLine:match(targetPattern)
+		if match then
+			for flag in match:gmatch("%S+") do
+				table.insert(links, flag)
+			end
+			return links
+		end
+	end
+
+	return links
+end
+
 ---@class TargetInfo
 ---@field name string
 ---@field dependencies string[]
@@ -226,6 +428,9 @@ function Parser.ParseTarget(sectionContent, targetName)
 
 		local targetPattern = "^" .. Utils.EscapePattern(targetName) .. "%s*:"
 		if trimmedLine:match(targetPattern) then
+			if trimmedLine:match("^" .. Utils.EscapePattern(targetName) .. "%s*:%s*LINKS%s*[%+:%?]?=") then
+				goto continue
+			end
 			target.found = true
 			target.dependencies = Parser.ParseDependencies(trimmedLine)
 
@@ -241,6 +446,7 @@ function Parser.ParseTarget(sectionContent, targetName)
 			end
 			break
 		end
+		::continue::
 		i = i + 1
 	end
 
@@ -366,6 +572,7 @@ function Parser.AnalyzeSection(sectionContent, baseName, annotatedType)
 	end
 
 	local targets = {}
+	local seen_targets = {}
 
 	if not baseName then
 		baseName = sectionContent:match("([^/]+)%.cpp") or ""
@@ -378,14 +585,20 @@ function Parser.AnalyzeSection(sectionContent, baseName, annotatedType)
 		if trimmedLine == "" or trimmedLine:match("^#") then
 			goto continue
 		end
+		if trimmedLine:match("^%s*[^:]+%s*:%s*LINKS%s*[%+:%?]?=") then
+			goto continue
+		end
 
 		local targetName = trimmedLine:match("^([^:]+):")
 		if targetName then
 			targetName = targetName:match("^%s*(.-)%s*$")
 
-			local targetInfo = Parser.ParseTarget(sectionContent, targetName)
-			if targetInfo.found then
-				table.insert(targets, targetInfo)
+			if not seen_targets[targetName] then
+				local targetInfo = Parser.ParseTarget(sectionContent, targetName)
+				if targetInfo.found then
+					table.insert(targets, targetInfo)
+					seen_targets[targetName] = true
+				end
 			end
 		end
 
@@ -457,8 +670,37 @@ function Parser.AnalyzeSection(sectionContent, baseName, annotatedType)
 end
 
 ---@param Content string
+---@param opts table|nil
 ---@return { path: string, baseName: string|nil, startLine: integer, endLine: integer, analysis: SectionAnalysis }[]
-function Parser.AnalyzeAllSections(Content)
+function Parser.AnalyzeAllSections(Content, opts)
+	local root_path = nil
+	local makefile_path = nil
+	if type(opts) == "table" then
+		root_path = opts.root_path or opts.root or opts.project_root
+		makefile_path = opts.makefile_path or opts.makefile or opts.makefilePath
+	elseif type(opts) == "string" then
+		root_path = opts
+	end
+	makefile_path = makefile_path or Parser.CacheMakefilePath
+	root_path = root_path or Parser.CacheRoot or vim.fn.getcwd()
+	if (not makefile_path or makefile_path == "") and root_path and root_path ~= "" then
+		local candidate = root_path .. "/Makefile"
+		if vim.loop.fs_stat(candidate) then
+			makefile_path = candidate
+		end
+	end
+
+	local cache_root = root_path
+	if makefile_path and makefile_path ~= "" then
+		cache_root = vim.fn.fnamemodify(makefile_path, ":h")
+	end
+
+	local cached, _, cache_file = try_load_cache(cache_root, makefile_path, Content)
+	if cached then
+		return cached
+	end
+	log_cache("MakeNvim cache miss (rebuild)")
+
 	local allPairs = Parser.FindAllMarkerPairs(Content)
 	local sectionAnalysis = {}
 
@@ -484,10 +726,11 @@ function Parser.AnalyzeAllSections(Content)
 				analysis = analysis,
 			})
 		else
-			vim.notify(string.format("ERROR in section '%s': %s", pair.path, analysis.error), vim.log.levels.ERROR)
+			Utils.Notify(string.format("Section error: %s (%s)", analysis.error, pair.path), vim.log.levels.ERROR)
 		end
 	end
 
+	write_cache(cache_file, sectionAnalysis, makefile_path, Content)
 	return sectionAnalysis
 end
 
@@ -516,6 +759,24 @@ function Parser.PrintAnalysisSummary(Content)
 
 	for _, section in ipairs(allSections) do
 		local analysis = section.analysis
+		local sectionContent = Parser.ReadContentBetweenMarkers(Content, section.path)
+		if type(sectionContent) == "table" then
+			sectionContent = table.concat(sectionContent, "\n")
+		end
+		local exeTargetName = Parser.FindExecutableTargetName(sectionContent, section.baseName)
+		local exeLinks = {}
+		if exeTargetName then
+			exeLinks = Parser.GetLinksForTarget(sectionContent, exeTargetName)
+		end
+		local function target_kind(name)
+			if name:match("%.o%s*$") then
+				return "obj"
+			elseif name:match("^run") then
+				return "run"
+			end
+			return "exe"
+		end
+
 		vim.notify(string.format("Path: %s", section.path))
 		vim.notify(string.format("Base Name: %s", section.baseName or "N/A"))
 		vim.notify(string.format("Type: %s", analysis.type))
@@ -531,7 +792,7 @@ function Parser.PrintAnalysisSummary(Content)
 		if #analysis.targets > 0 then
 			vim.notify("Targets:")
 			for _, target in ipairs(analysis.targets) do
-				vim.notify(string.format("  - %s", target.name))
+				vim.notify(string.format("  - %s (%s)", target.name, target_kind(target.name)))
 				if #target.dependencies > 0 then
 					vim.notify(string.format("    Dependencies: %s", table.concat(target.dependencies, ", ")))
 				end
@@ -539,6 +800,13 @@ function Parser.PrintAnalysisSummary(Content)
 					vim.notify("    Recipe:")
 					for _, recipeLine in ipairs(target.recipe) do
 						vim.notify(string.format("      %s", recipeLine))
+					end
+				end
+				if exeTargetName and target.name == exeTargetName then
+					if #exeLinks > 0 then
+						vim.notify(string.format("    Links: %s", table.concat(exeLinks, " ")))
+					else
+						vim.notify("    Links: (none)")
 					end
 				end
 			end

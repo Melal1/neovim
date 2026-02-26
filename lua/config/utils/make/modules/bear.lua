@@ -11,7 +11,7 @@ local function run_bear_async(cmd, success_msg, Callback)
 		vim.defer_fn(function()
 			vim.schedule(function()
 				if obj.code == 0 then
-					vim.notify(success_msg or "Bear finished successfully", vim.log.levels.INFO, {
+					Utils.Notify(success_msg or "Bear finished successfully", vim.log.levels.INFO, {
 						title = "Make + Bear",
 					})
 					if Callback then
@@ -22,13 +22,13 @@ local function run_bear_async(cmd, success_msg, Callback)
 
 				local err_path = "/tmp/Bearerr"
 				if Utils.WriteFile(err_path, obj.stderr, false) then
-					vim.notify(
+					Utils.Notify(
 						"Bear failed. Error saved to: " .. err_path,
 						vim.log.levels.HINT,
 						{ title = "Make + Bear" }
 					)
 				else
-					vim.notify(
+					Utils.Notify(
 						"Bear failed, but could not save /tmp/Bearerr",
 						vim.log.levels.HINT,
 						{ title = "Make + Bear" }
@@ -110,7 +110,7 @@ end
 function M.SelectTarget(Content, Rootdir)
 	local Picker = require("config.utils.pick")
 	if not Picker.available then
-		vim.notify("Picker is not available")
+		Utils.Notify("Telescope picker is unavailable.", vim.log.levels.WARN)
 		return false
 	end
 
@@ -147,7 +147,7 @@ function M.SelectTarget(Content, Rootdir)
 			table.concat(BearTargets, " ")
 		)
 		run_bear_async(cmd, "Bear finished")
-	end, { prompt_title = "Select target(s) to bear!", previewer = Picker.text_per_entry_previewer("make") })
+	end, { prompt_title = "Select targets for Bear", previewer = Picker.text_per_entry_previewer("make") })
 	return true
 end
 

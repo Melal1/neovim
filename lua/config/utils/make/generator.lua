@@ -47,10 +47,12 @@ end
 ---@param Dependencies string[]|nil       Optional list of header dependencies
 ---@param MakefileVars MakefileVars       Makefile variables table
 ---@param RootPath string                 Root search path for includes
+---@param Links string[]|nil              Optional list of linker flags
 ---@return string[] lines_or_missing
 ---@return boolean success                Whether generation succeeded
-function Generator.ExecutableTarget(Basename, RelativePath, Dependencies, MakefileVars, RootPath)
+function Generator.ExecutableTarget(Basename, RelativePath, Dependencies, MakefileVars, RootPath, Links)
 	Dependencies = Dependencies or {}
+	Links = Links or {}
 	local ObjName = "$(BUILD_DIR)/" .. Basename .. ".o"
 	local ExeName = "$(BUILD_DIR)/" .. Basename
 	local CompilerVar = MakefileVars.CC and "$(CC)" or "$(CXX)"
@@ -90,20 +92,28 @@ function Generator.ExecutableTarget(Basename, RelativePath, Dependencies, Makefi
 
 	local IncludeStr = table.concat(Include, " ")
 	local LinkDepsStr = table.concat(LinkDeps, " ")
+	local LinksStr = table.concat(Links, " ")
 
-	return {
+	local lines = {
 		"",
 		"# marker_start: " .. RelativePath .. " type:full",
 		ObjName .. ": " .. RelativePath,
 		"\t" .. CompilerVar .. " " .. FlagsVar .. " " .. IncludeStr .. " -c $< -o $@",
 		"",
-		ExeName .. ": " .. ObjName .. (LinkDepsStr ~= "" and " " .. LinkDepsStr or ""),
-		"\t" .. CompilerVar .. " $^ -o $@",
-		"",
-		"run" .. Basename .. ": " .. ExeName,
-		"\t" .. ExeName,
-		"# marker_end: " .. RelativePath,
-	},
+	}
+
+	if LinksStr ~= "" then
+		table.insert(lines, ExeName .. ": LINKS += " .. LinksStr)
+	end
+
+	table.insert(lines, ExeName .. ": " .. ObjName .. (LinkDepsStr ~= "" and " " .. LinkDepsStr or ""))
+	table.insert(lines, "\t" .. CompilerVar .. " $^ -o $@ $(LINKS)")
+	table.insert(lines, "")
+	table.insert(lines, "run" .. Basename .. ": " .. ExeName)
+	table.insert(lines, "\t" .. ExeName)
+	table.insert(lines, "# marker_end: " .. RelativePath)
+
+	return lines,
 		true
 end
 
@@ -113,28 +123,19 @@ end
 ---@param MakefileVars MakefileVars
 ---@return boolean|nil success
 function Generator.EnsureMakefileVariables(MakefilePath, Content, MakefileVars)
-	if not Parser.HasReqVars(Content, MakefileVars) then
-		local Variables = Parser.ParseVariables(Content)
-		for VarName, _ in pairs(MakefileVars) do
-			if not Variables[VarName] then
-				Exist = false
-				break
-			end
-		end
-
-		if not Exist then
-			local VarLines = Generator.GenerateMakefileVariables(MakefileVars)
-			local NewContent = table.concat(VarLines, "\n") .. (Content or "")
-
-			local Success, WriteErr = Utils.WriteFile(MakefilePath, NewContent)
-			if not Success then
-				vim.notify("Failed to write Makefile: " .. WriteErr, vim.log.levels.ERROR)
-				return nil
-			end
-			return false
-		end
+	if Parser.HasReqVars(Content, MakefileVars) then
+		return true
 	end
-	return true
+
+	local VarLines = Generator.GenerateMakefileVariables(MakefileVars)
+	local NewContent = table.concat(VarLines, "\n") .. (Content or "")
+
+	local Success, WriteErr = Utils.WriteFile(MakefilePath, NewContent)
+	if not Success then
+		Utils.Notify("Failed to write Makefile: " .. WriteErr, vim.log.levels.ERROR)
+		return nil
+	end
+	return false
 end
 
 return Generator

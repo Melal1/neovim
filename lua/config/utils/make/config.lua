@@ -13,6 +13,8 @@ Config.DefaultConfig = {
 	SourceExtensions = { ".cpp", ".c", ".cc", ".cxx" },
 	RootMarkers = { ".git", "src", "include", "build", "Makefile" },
 	MaxSearchLevels = 5,
+	CacheUseHash = true,
+	LinkOptions = {}, -- deprecated: link options are stored in the Makefile links block
 	MakefileVars = {
 		CXX = "g++",
 		DEBUGFLAGS = "-std=c++17 -g -O0",
