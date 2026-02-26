@@ -1,4 +1,40 @@
 return {
+	{
+		"Civitasv/cmake-tools.nvim",
+		opts = {
+			cmake_build_directory = function()
+				return "build/${variant:buildType}"
+			end,
+
+			cmake_dap_configuration = { -- debug settings for cmake
+				name = "cpp",
+				type = "cppdbg",
+				request = "launch",
+				stopOnEntry = false,
+				runInTerminal = false,
+				MIMode = "gdb",
+				miDebuggerServerAddress = "localhost:1234",
+				miDebuggerPath = "/run/current-system/sw/bin/gdb",
+				program = function()
+					local cmake = require("cmake-tools")
+					local path = cmake.get_launch_target_path()
+					require("config.utils.debug").RunDebug("cpp", path)
+					return path
+				end,
+			},
+			cmake_virtual_text_support = false, -- Show the target related to current file using virtual text (at right corner)
+			cmake_runner = {
+				name = "terminal",
+				default_opts = {
+					terminal = {
+						use_shell_alias = true,
+					},
+				},
+			},
+		},
+
+		ft = { "cpp", "c", "h", "hpp" },
+	},
 	--Debugging: DAP
 	{
 		"mfussenegger/nvim-dap",

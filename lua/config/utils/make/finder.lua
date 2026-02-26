@@ -23,7 +23,7 @@ function Finder.FindRoot(StartingPoint, MaxSearchLevels, RootMarkers)
 		return nil, "Starting point is not a directory: " .. StartingPoint
 	end
 
-	MaxSearchLevels = MaxSearchLevels or 5
+	MaxSearchLevels = MaxSearchLevels or 4
 	RootMarkers = RootMarkers or { ".git", "src", "include", "build", "Makefile" }
 
 	local CurrentPath = StartingPoint

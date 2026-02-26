@@ -119,6 +119,11 @@ local diag_enabled = false
 math.randomseed(os.time())
 local funny = { "Creative", "EasyMode", "Spectator", "Redstone", "!Xp", " " }
 
+-- BUILD SYSTEM COMPONENT
+local BuildSystem = ""
+function M.build_system_component()
+	return hl_str("StatusLineFileName", BuildSystem)
+end
 
 -- AUTOCOMMAND: LSP attach/detach + BufEnter -----------------------------------
 vim.api.nvim_create_autocmd({ "LspAttach", "LspDetach", "BufEnter" }, {
@@ -140,6 +145,18 @@ vim.api.nvim_create_autocmd({ "LspAttach", "LspDetach", "BufEnter" }, {
 		file_icon = WebDevIcons.get_icon_by_filetype(ft)
 		if not file_icon then
 			file_icon = ""
+		end
+		if ft == "cpp" then
+			local cmake = require("cmake-tools")
+			if cmake.is_cmake_project() then
+				BuildSystem =cmake.get_build_type() and "[" .. cmake.get_build_type() .. "]" or "[CMake]"
+			else
+				if require("config.utils.make.finder").FindRoot(nil, 3, { "Makefile" }) then
+					BuildSystem = "[Make]"
+				end
+			end
+		else
+			BuildSystem = ""
 		end
 
 		-- Diagnostics enabled if at least one LSP is attached
@@ -288,6 +305,7 @@ function M.render()
 		" ",
 		M.diagnostics_component(),
 		" ",
+		(_G.DAP_IS_ACTIVE and "") or M.build_system_component(),
 		"%=", -- left/center/right separator
 		M.dap_component(),
 		breadcrumb,
