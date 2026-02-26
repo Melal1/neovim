@@ -38,6 +38,13 @@ hl(0, "ModeCommand", { fg = colors.yellow, bold = true })
 hl(0, "ModeSelect", { fg = colors.cyan, bold = true })
 hl(0, "ModeTerminal", { fg = colors.magenta_bright, bold = true })
 hl(0, "ModeOther", { fg = colors.fg_dim, bold = true })
+hl(0, "ModeComInv", { fg = colors.bg, bg = colors.cyan_bright, bold = true })
+hl(0, "ModeVisualInv", { fg = colors.bg, bg = colors.magenta, bold = true })
+hl(0, "ModeReplaceInv", { fg = colors.bg, bg = colors.red, bold = true })
+hl(0, "ModeCommandInv", { fg = colors.bg, bg = colors.yellow, bold = true })
+hl(0, "ModeSelectInv", { fg = colors.bg, bg = colors.cyan, bold = true })
+hl(0, "ModeTerminalInv", { fg = colors.bg, bg = colors.magenta_bright, bold = true })
+hl(0, "ModeOtherInv", { fg = colors.bg, bg = colors.fg_dim, bold = true })
 
 -- Modes -------------------------------------------------------------------------
 
@@ -48,22 +55,22 @@ local CTRL_S = vim.api.nvim_replace_termcodes("<C-s>", true, true, true)
 local WebDevIcons = require("nvim-web-devicons")
 
 local modes = setmetatable({
-	n = { long = "NORMAL", short = "N", hl = "ModeCom" },
-	v = { long = "VISUAL", short = "V", hl = "ModeVisual" },
-	V = { long = "V-LINE", short = "V-L", hl = "ModeVisual" },
-	[CTRL_V] = { long = "V-BLOCK", short = "V-B", hl = "ModeVisual" },
-	s = { long = "SELECT", short = "S", hl = "ModeSelect" },
-	S = { long = "S-LINE", short = "S-L", hl = "ModeSelect" },
-	[CTRL_S] = { long = "S-BLOCK", short = "S-B", hl = "ModeSelect" },
-	i = { long = "INSERT", short = "I", hl = "ModeCom" },
-	R = { long = "REPLACE", short = "R", hl = "ModeReplace" },
-	c = { long = "COMMAND", short = "C", hl = "ModeCommand" },
-	r = { long = "PROMPT", short = "P", hl = "ModeOther" },
-	["!"] = { long = "SHELL", short = "Sh", hl = "ModeOther" },
-	t = { long = "TERMINAL", short = "T", hl = "ModeTerminal" },
+	n = { long = " NORMAL ", short = " N ", hl = "ModeComInv" },
+	v = { long = " VISUAL ", short = " V ", hl = "ModeVisualInv" },
+	V = { long = " V-LINE ", short = " V-L ", hl = "ModeVisualInv" },
+	[CTRL_V] = { long = " V-BLOCK ", short = " V-B ", hl = "ModeVisualInv" },
+	s = { long = " SELECT ", short = " S ", hl = "ModeSelectInv" },
+	S = { long = " S-LINE ", short = " S-L ", hl = "ModeSelectInv" },
+	[CTRL_S] = { long = " S-BLOCK ", short = " S-B ", hl = "ModeSelectInv" },
+	i = { long = " INSERT ", short = " I ", hl = "ModeComInv" },
+	R = { long = " REPLACE ", short = " R ", hl = "ModeReplaceInv" },
+	c = { long = " COMMAND ", short = " C ", hl = "ModeCommandInv" },
+	r = { long = " PROMPT ", short = " P ", hl = "ModeOtherInv" },
+	[" ! "] = { long = " SHELL ", short = "Sh", hl = "ModeOtherInv" },
+	t = { long = " TERMINAL ", short = " T ", hl = "ModeTerminalInv" },
 }, {
 	__index = function()
-		return { long = "UNKNOWN", short = "U", hl = "ModeOther" }
+		return { long = " UNKNOWN ", short = " U ", hl = "ModeOtherInv" }
 	end,
 })
 
@@ -82,7 +89,8 @@ end
 -- MODE COMPONENT --------------------------------------------------------------
 local function mode_component()
 	local m = modes[vim.fn.mode()]
-	return hl_str(m.hl, " " .. (trunc100 and m.short or m.long) .. " ")
+	-- return hl_str(m.hl, (trunc100 and m.short or m.long))
+	return hl_str(m.hl, m.short)
 end
 
 -- GIT COMPONENT ----------------------------------------------------------------
@@ -111,6 +119,7 @@ local diag_enabled = false
 math.randomseed(os.time())
 local funny = { "Creative", "EasyMode", "Spectator", "Redstone", "!Xp", " " }
 
+
 -- AUTOCOMMAND: LSP attach/detach + BufEnter -----------------------------------
 vim.api.nvim_create_autocmd({ "LspAttach", "LspDetach", "BufEnter" }, {
 	callback = function(args)
@@ -127,7 +136,8 @@ vim.api.nvim_create_autocmd({ "LspAttach", "LspDetach", "BufEnter" }, {
 		end
 
 		-- File icon update
-		file_icon = WebDevIcons.get_icon_by_filetype(vim.bo[buf].filetype)
+		local ft = vim.bo[buf].filetype
+		file_icon = WebDevIcons.get_icon_by_filetype(ft)
 		if not file_icon then
 			file_icon = ""
 		end
@@ -242,11 +252,11 @@ end, { nargs = 1 })
 
 -- RENDER -----------------------------------------------------------------------
 local breadcrumb = ""
-	local ignore = {
-		["dap-view"] = true,
-		["dap-view-term"] = true,
-		["dap-view-help"] = true,
-	}
+local ignore = {
+	["dap-view"] = true,
+	["dap-view-term"] = true,
+	["dap-view-help"] = true,
+}
 function M.render()
 	trunc100 = is_truncated(100)
 	local ft = vim.bo.filetype

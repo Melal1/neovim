@@ -79,6 +79,7 @@ return {
 						local msg = require("config.utils.debug").Debug(true)
 						return msg
 					end,
+					stopAtEntry = true,
 				},
 				{
 					name = "Attach to gdbserver :1234",
@@ -92,6 +93,7 @@ return {
 						local msg = require("config.utils.debug").Debug()
 						return msg
 					end,
+					stopAtEntry = true,
 				},
 				{
 					name = "Launch file",

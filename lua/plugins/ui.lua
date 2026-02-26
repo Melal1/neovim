@@ -1,4 +1,3 @@
-
 --Diagnostics: tiny-inline
 
 return {
@@ -95,6 +94,9 @@ return {
 		keys = {
 			{ "<leader>cct", "<cmd>CccHighlighterToggle<CR>", desc = "Toggle color highlighter" },
 		},
+    cmd = {
+      "CccPick"
+    },
 		config = function()
 			require("ccc").setup({
 				highlighter = {

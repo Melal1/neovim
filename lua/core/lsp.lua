@@ -1,11 +1,12 @@
 vim.lsp.enable({
 	"lua_ls",
+  "cmake",
 	"pyright",
 	"ruff",
-	"clangd",
 	"nil_ls",
 	"jsonls",
 	"qmlls",
+  "clangd",
 	-- "harper_ls",
 })
 
