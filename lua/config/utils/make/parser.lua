@@ -43,6 +43,30 @@ local function log_cache(message)
 	vim.notify(message, vim.log.levels.DEBUG)
 end
 
+local function is_links_assignment_line(line)
+	return line:match("^%s*[^:]+%s*:%s*LINKS%s*[%+:%?]?=") ~= nil
+end
+
+local function search_flags_for(annotatedType)
+	local searchFor = { obj = true, executable = true, run = true }
+	if annotatedType then
+		searchFor = { obj = false, executable = false, run = false }
+		if annotatedType == "full" then
+			searchFor.obj = true
+			searchFor.executable = true
+			searchFor.run = true
+		elseif annotatedType == "executable" then
+			searchFor.obj = true
+			searchFor.executable = true
+		elseif annotatedType == "obj" then
+			searchFor.obj = true
+		elseif annotatedType == "run" then
+			searchFor.run = true
+		end
+	end
+	return searchFor
+end
+
 local function read_makefile_content(makefile_path)
 	if not makefile_path or makefile_path == "" then
 		return nil
@@ -347,7 +371,7 @@ function Parser.FindExecutableTargetName(sectionContent, baseName)
 		if trimmedLine == "" or trimmedLine:match("^#") then
 			goto continue
 		end
-		if trimmedLine:match("^%s*[^:]+%s*:%s*LINKS%s*[%+:%?]?=") then
+		if is_links_assignment_line(trimmedLine) then
 			goto continue
 		end
 		if trimmedLine:match("^%s*[^:]+%s*:%s*LINKS%s*[%+:%?]?=") then
@@ -367,6 +391,7 @@ function Parser.FindExecutableTargetName(sectionContent, baseName)
 						targetName == baseName
 						or targetName:match("/" .. escapedBase .. "$")
 						or targetName:match("%$%(BUILD_DIR%)/" .. escapedBase .. "$")
+						or targetName:match("%$%(BUILD_DIR%)/%$%(BUILD_MODE%)/" .. escapedBase .. "$")
 					then
 						return targetName
 					end
@@ -434,7 +459,7 @@ function Parser.ParseTarget(sectionContent, targetName)
 
 		local targetPattern = "^" .. Utils.EscapePattern(targetName) .. "%s*:"
 		if trimmedLine:match(targetPattern) then
-			if trimmedLine:match("^" .. Utils.EscapePattern(targetName) .. "%s*:%s*LINKS%s*[%+:%?]?=") then
+			if is_links_assignment_line(trimmedLine) then
 				goto continue
 			end
 			target.found = true
@@ -470,37 +495,15 @@ function Parser.DetectTargetTypes(sectionContent, baseName, annotatedType)
 	local hasExecutable = false
 	local hasRun = false
 
-	local searchFor = {
-		obj = true,
-		executable = true,
-		run = true,
-	}
-
-	if annotatedType then
-		searchFor = {
-			obj = false,
-			executable = false,
-			run = false,
-		}
-
-		if annotatedType == "full" then
-			searchFor.obj = true
-			searchFor.executable = true
-			searchFor.run = true
-		elseif annotatedType == "executable" then
-			searchFor.obj = true
-			searchFor.executable = true
-		elseif annotatedType == "obj" then
-			searchFor.obj = true
-		elseif annotatedType == "run" then
-			searchFor.run = true
-		end
-	end
+	local searchFor = search_flags_for(annotatedType)
 
 	for line in sectionContent:gmatch("[^\n]+") do
 		local trimmedLine = line:match("^%s*(.-)%s*$")
 
 		if trimmedLine == "" or trimmedLine:match("^#") then
+			goto continue
+		end
+		if is_links_assignment_line(trimmedLine) then
 			goto continue
 		end
 
@@ -585,33 +588,76 @@ function Parser.AnalyzeSection(sectionContent, baseName, annotatedType)
 		baseName = baseName:gsub("%.cpp$", "")
 	end
 
-	for line in sectionContent:gmatch("[^\n]+") do
+	local hasObj = false
+	local hasExecutable = false
+	local hasRun = false
+	local searchFor = search_flags_for(annotatedType)
+	local escapedBase = baseName ~= "" and Utils.EscapePattern(baseName) or nil
+
+	local lines = vim.split(sectionContent, "\n", { plain = true })
+	local i = 1
+	while i <= #lines do
+		local line = lines[i]
 		local trimmedLine = line:match("^%s*(.-)%s*$")
 
 		if trimmedLine == "" or trimmedLine:match("^#") then
+			i = i + 1
 			goto continue
 		end
-		if trimmedLine:match("^%s*[^:]+%s*:%s*LINKS%s*[%+:%?]?=") then
+		if is_links_assignment_line(trimmedLine) then
+			i = i + 1
 			goto continue
 		end
 
 		local targetName = trimmedLine:match("^([^:]+):")
-		if targetName then
-			targetName = targetName:match("^%s*(.-)%s*$")
-
-			if not seen_targets[targetName] then
-				local targetInfo = Parser.ParseTarget(sectionContent, targetName)
-				if targetInfo.found then
-					table.insert(targets, targetInfo)
-					seen_targets[targetName] = true
-				end
-			end
+		if not targetName then
+			i = i + 1
+			goto continue
 		end
 
+		targetName = targetName:match("^%s*(.-)%s*$")
+		if not seen_targets[targetName] then
+			if searchFor.obj and not hasObj and targetName:match("%.o%s*$") then
+				hasObj = true
+			end
+			if searchFor.executable and not hasExecutable and escapedBase then
+				if targetName == baseName or targetName:match("/" .. escapedBase .. "$") then
+					hasExecutable = true
+				end
+			end
+			if searchFor.run and not hasRun and escapedBase then
+				if targetName == "run" .. baseName or targetName:match("/run" .. escapedBase .. "$") then
+					hasRun = true
+				end
+			end
+
+			local deps = Parser.ParseDependencies(trimmedLine)
+			local recipe = {}
+			local j = i + 1
+			while j <= #lines do
+				local nextLine = lines[j]
+				if nextLine:match("^%s+") and not nextLine:match("^%s*#") then
+					table.insert(recipe, nextLine:match("^%s*(.*)$"))
+					j = j + 1
+				else
+					break
+				end
+			end
+
+			table.insert(targets, {
+				name = targetName,
+				dependencies = deps,
+				recipe = recipe,
+				found = true,
+			})
+			seen_targets[targetName] = true
+			i = j
+			goto continue
+		end
+
+		i = i + 1
 		::continue::
 	end
-
-	local hasObj, hasExecutable, hasRun = Parser.DetectTargetTypes(sectionContent, baseName)
 
 	local inferredType
 	if hasObj and hasExecutable and hasRun then

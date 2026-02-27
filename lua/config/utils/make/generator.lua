@@ -16,7 +16,7 @@ function Generator.GenerateMakefileVariables(MakefileVars)
 		table.insert(Lines, VarName .. " = " .. VarValue)
 	end
 
-	table.insert(Lines, "$(shell mkdir -p $(BUILD_DIR))")
+	table.insert(Lines, "$(shell mkdir -p $(BUILD_DIR)/$(BUILD_MODE))")
 	table.insert(Lines, "")
 
 	return Lines
@@ -28,7 +28,7 @@ end
 ---@param MakefileVars MakefileVars Makefile variables table
 ---@return string[]
 function Generator.ObjectTarget(Basename, RelativePath, MakefileVars)
-	local ObjName = "$(BUILD_DIR)/" .. Basename .. ".o"
+	local ObjName = "$(BUILD_DIR)/$(BUILD_MODE)/" .. Basename .. ".o"
 	local CompilerVar = MakefileVars.CC and "$(CC)" or "$(CXX)"
 	local FlagsVar = MakefileVars.CFLAGS and "$(CFLAGS)" or "$(CXXFLAGS)"
 
@@ -53,8 +53,8 @@ end
 function Generator.ExecutableTarget(Basename, RelativePath, Dependencies, MakefileVars, RootPath, Links)
 	Dependencies = Dependencies or {}
 	Links = Links or {}
-	local ObjName = "$(BUILD_DIR)/" .. Basename .. ".o"
-	local ExeName = "$(BUILD_DIR)/" .. Basename
+	local ObjName = "$(BUILD_DIR)/$(BUILD_MODE)/" .. Basename .. ".o"
+	local ExeName = "$(BUILD_DIR)/$(BUILD_MODE)/" .. Basename
 	local CompilerVar = MakefileVars.CC and "$(CC)" or "$(CXX)"
 	local FlagsVar = MakefileVars.CFLAGS and "$(CFLAGS)" or "$(CXXFLAGS)"
 

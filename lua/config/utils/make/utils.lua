@@ -130,4 +130,22 @@ function Utils.Notify(Message, Level, Opts)
 	vim.notify(msg, Level or vim.log.levels.INFO, Opts)
 end
 
+---Returns the build output directory using BUILD_DIR and BUILD_MODE.
+---@param Vars table
+---@return string
+function Utils.GetBuildOutputDir(Vars)
+	if not Vars then
+		return "./build"
+	end
+	local build_dir = Vars.BUILD_DIR or "./build"
+	local build_mode = Vars.BUILD_MODE or ""
+	if build_mode ~= "" then
+		if build_dir:match("/" .. Utils.EscapePattern(build_mode) .. "$") then
+			return build_dir
+		end
+		return build_dir .. "/" .. build_mode
+	end
+	return build_dir
+end
+
 return Utils

@@ -39,6 +39,21 @@ local function run_bear_async(cmd, success_msg, Callback)
 	end)
 end
 
+local function resolve_target_name(target, vars)
+	local base_dir = vars.BUILD_DIR or "./build"
+	local build_mode = vars.BUILD_MODE or "debug"
+	local build_out = Utils.GetBuildOutputDir(vars)
+	local resolved = target
+	if resolved:find("%$%(BUILD_MODE%)") then
+		resolved = resolved:gsub("%$%(BUILD_DIR%)/%$%(BUILD_MODE%)", build_out)
+		resolved = resolved:gsub("%$%(BUILD_MODE%)", build_mode)
+		resolved = resolved:gsub("%$%(BUILD_DIR%)", base_dir)
+	else
+		resolved = resolved:gsub("%$%(BUILD_DIR%)", base_dir)
+	end
+	return resolved:match("^%s*(.-)%s*$")
+end
+
 ---Run bear for the current file
 ---@param Content string Makefile content
 ---@param Rootdir string Root directory of the project
@@ -47,7 +62,6 @@ end
 ---@return boolean success True if cmd sent ( Regarding cmd errors)
 function M.CurrentFile(Content, Rootdir, RelativePath, Callback)
 	local Vars = Parser.ParseVariables(Content)
-	local BuildDir = Vars["BUILD_DIR"]
 	RelativePath = RelativePath or Utils.GetRelativePath(vim.fn.expand("%"), Rootdir)
 
 	if not RelativePath then
@@ -60,7 +74,7 @@ function M.CurrentFile(Content, Rootdir, RelativePath, Callback)
 		if (Ent.analysis.type == "full" or Ent.analysis.type == "obj") and Ent.path == RelativePath then
 			for _, Target in ipairs(Ent.analysis.targets) do
 				if Target.name:match("^%$%(BUILD_DIR%).+%.o$") then
-					local ModifiedName = Target.name:gsub("%$%(BUILD_DIR%)", BuildDir)
+					local ModifiedName = resolve_target_name(Target.name, Vars)
 					local cmd = string.format(
 						"cd %s && bear --append -- make -B %s",
 						vim.fn.shellescape(Rootdir),
@@ -81,14 +95,17 @@ end
 ---Run bear for specific target lines
 ---@param Lines string[] Target lines
 ---@param Rootdir string Root directory of the project
----@param BuildDir string Build directory as specified in Makefile
+---@param BuildDir string Build output directory
 ---@return boolean success True if cmd sent ( Regarding cmd errors)
 function M.Target(Lines, Rootdir, BuildDir)
 	for _, Line in ipairs(Lines) do
 		-- Match object file targets
 		local targetName = Line:match("^([^:]+):")
 		if targetName and targetName:match("^%$%(BUILD_DIR%).+%.o$") then
-			local ModifiedName = targetName:gsub("%$%(BUILD_DIR%)", BuildDir):match("^%s*(.-)%s*$")
+			local ModifiedName = targetName
+				:gsub("%$%(BUILD_DIR%)/%$%(BUILD_MODE%)", BuildDir)
+				:gsub("%$%(BUILD_DIR%)", BuildDir)
+				:match("^%s*(.-)%s*$")
 			local cmd = string.format(
 				"cd %s && bear --append -- make -B %s",
 				vim.fn.shellescape(Rootdir),
@@ -115,7 +132,6 @@ function M.SelectTarget(Content, Rootdir)
 	end
 
 	local Vars = Parser.ParseVariables(Content)
-	local BuildDir = Vars["BUILD_DIR"]
 	local TableOfAllTargets = Parser.AnalyzeAllSections(Content)
 	local map = {}
 	local PickerEnts = {}
@@ -135,7 +151,7 @@ function M.SelectTarget(Content, Rootdir)
 		for _, LineNum in ipairs(selected) do
 			for _, Target in ipairs(map[LineNum].analysis.targets) do
 				if Target.name:match("^%$%(BUILD_DIR%).+%.o$") then
-					table.insert(BearTargets, Target.name:gsub("%$%(BUILD_DIR%)", BuildDir):match("^%s*(.-)%s*$"))
+					table.insert(BearTargets, resolve_target_name(Target.name, Vars))
 					break
 				end
 			end
