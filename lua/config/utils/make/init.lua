@@ -440,6 +440,76 @@ local function get_existing_links(content, relative_path, base_name)
 	return Parser.GetLinksForTarget(section_content, target_name)
 end
 
+local function normalize_build_mode(mode)
+	if not mode or mode == "" then
+		return nil
+	end
+	local normalized = mode:lower()
+	if normalized == "debug" or normalized == "release" then
+		return normalized
+	end
+	return nil
+end
+
+local function update_makefile_var(lines, var_name, value)
+	for i, line in ipairs(lines) do
+		local name, op = line:match("^%s*([%w_]+)%s*(:?=)")
+		if name == var_name then
+			local prefix = line:match("^(%s*)") or ""
+			lines[i] = string.format("%s%s %s %s", prefix, var_name, op or "=", value)
+			return true
+		end
+	end
+	return false
+end
+
+local function insert_makefile_var(lines, var_name, value)
+	local insert_at = 1
+	for i, line in ipairs(lines) do
+		if line:match("^%s*%w[%w_]*%s*:?=") or line:match("^%s*$") then
+			insert_at = i + 1
+		else
+			break
+		end
+	end
+	table.insert(lines, insert_at, string.format("%s = %s", var_name, value))
+end
+
+local function detect_build_mode(vars)
+	local cxxflags = vars.CXXFLAGS or ""
+	if cxxflags:match("RELEASEFLAGS") then
+		return "release"
+	end
+	if cxxflags:match("DEBUGFLAGS") then
+		return "debug"
+	end
+	return nil
+end
+
+function M.SetBuildMode(MakefilePath, Content, Mode)
+	local normalized = normalize_build_mode(Mode)
+	if not normalized then
+		Utils.Notify("Usage: Make mode [debug|release].", vim.log.levels.WARN)
+		return false
+	end
+
+	local value = normalized == "release" and "$(RELEASEFLAGS)" or "$(DEBUGFLAGS)"
+	local lines = vim.split(Content or "", "\n", { plain = true })
+	if not update_makefile_var(lines, "CXXFLAGS", value) then
+		insert_makefile_var(lines, "CXXFLAGS", value)
+	end
+
+	local new_content = table.concat(lines, "\n")
+	local ok, err = Utils.WriteFile(MakefilePath, new_content)
+	if not ok then
+		Utils.Notify("Failed to update build mode: " .. (err or "unknown error"), vim.log.levels.ERROR)
+		return false
+	end
+
+	Utils.Notify("Build mode set to " .. normalized .. ".", vim.log.levels.INFO)
+	return true
+end
+
 local function update_section_links(section_lines, target_name, links)
 	local link_line_index = nil
 	local target_line_index = nil
@@ -1671,6 +1741,8 @@ function M.Make(Fargs)
 	elseif arg == "bear" then
 		local Bear = require("config.utils.make.modules.bear")
 		return Bear.CurrentFile(MakefileContent, Root.Path)
+	elseif arg == "mode" then
+		return M.SetBuildMode(MakefilePath, MakefileContent, Fargs[2])
 	elseif arg == "link" then
 		return M.ManageLinkOptionsInteractive(MakefilePath, MakefileContent)
 	else

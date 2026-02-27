@@ -50,6 +50,8 @@ local function read_makefile_content(makefile_path)
 	return Utils.ReadFile(makefile_path)
 end
 
+local write_cache
+
 local function try_load_cache(root_path, makefile_path, content)
 	local cache_file = cache_file_for(root_path or vim.fn.getcwd())
 	if not vim.loop.fs_stat(cache_file) then
@@ -103,10 +105,14 @@ local function try_load_cache(root_path, makefile_path, content)
 	end
 
 	log_cache("MakeNvim cache hit (hash)")
+	if makefile_path and makefile_path ~= "" then
+		write_cache(cache_file, decoded.sections, makefile_path, content)
+		log_cache("MakeNvim cache metadata refreshed")
+	end
 	return decoded.sections, hash, cache_file
 end
 
-local function write_cache(cache_file, sections, makefile_path, content)
+write_cache = function(cache_file, sections, makefile_path, content)
 	if not cache_file then
 		return
 	end

@@ -28,6 +28,15 @@ vim.api.nvim_create_autocmd("FileType", {
 					end
 					return run_opts
 				end
+				if Args[2] == "mode" then
+					local mode_opts = { "debug", "release" }
+					if arglead and arglead ~= "" then
+						return vim.tbl_filter(function(item)
+							return item:find("^" .. vim.pesc(arglead)) ~= nil
+						end, mode_opts)
+					end
+					return mode_opts
+				end
 
 				local items = {
 					"build",
@@ -42,6 +51,7 @@ vim.api.nvim_create_autocmd("FileType", {
 					"remove",
 					"analysis",
 					"tasks",
+					"mode",
 					"link",
 					"fastrun",
 				}
