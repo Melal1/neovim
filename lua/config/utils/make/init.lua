@@ -2,17 +2,18 @@
 ---@field Config table
 local M = {}
 
-local Config = require("config.utils.make.config")
-local Utils = require("config.utils.make.utils")
-local Parser = require("config.utils.make.parser")
-local Generator = require("config.utils.make.generator")
-local RootFinder = require("config.utils.make.finder")
-local Links = require("config.utils.make.links")
-local Actions = require("config.utils.make.actions")
-local Runner = require("config.utils.make.runner")
-local Build = require("config.utils.make.build")
+local Config = require("config.utils.make.modules.config")
+local Utils = require("config.utils.make.shared.utils")
+local Parser = require("config.utils.make.modules.parser")
+local Generator = require("config.utils.make.modules.generator")
+local RootFinder = require("config.utils.make.shared.finder")
+local Links = require("config.utils.make.modules.links")
+local Actions = require("config.utils.make.modules.actions")
+local Runner = require("config.utils.make.modules.runner")
+local Build = require("config.utils.make.modules.build")
 
 M.Config = Config.DefaultConfig
+Utils.BackupEnabled = M.Config.EnableBackup
 
 ---@param UserConfig table|nil
 function M.Setup(UserConfig)
@@ -20,10 +21,17 @@ function M.Setup(UserConfig)
 	if M.Config.CacheUseHash ~= nil then
 		Parser.CacheUseHash = M.Config.CacheUseHash
 	end
+	if M.Config.EnableBackup ~= nil then
+		Utils.BackupEnabled = M.Config.EnableBackup
+	end
 end
 
 function M.SetBuildMode(MakefilePath, Content, Mode)
 	return Build.SetBuildMode(MakefilePath, Content, Mode)
+end
+
+function M.CleanBuild(MakefilePath, Content)
+	return Build.CleanBuild(MakefilePath, Content)
 end
 
 function M.ManageLinkOptionsInteractive(makefile_path, makefile_content)
@@ -172,6 +180,8 @@ function M.Make(Fargs)
 		return Bear.CurrentFile(MakefileContent, Root.Path)
 	elseif arg == "mode" then
 		return M.SetBuildMode(MakefilePath, MakefileContent, Fargs[2])
+	elseif arg == "clean" then
+		return M.CleanBuild(MakefilePath, MakefileContent)
 	elseif arg == "link" then
 		return M.ManageLinkOptionsInteractive(MakefilePath, MakefileContent)
 	else

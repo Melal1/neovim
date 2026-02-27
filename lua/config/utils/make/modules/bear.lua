@@ -1,5 +1,5 @@
-local Parser = require("config.utils.make.parser")
-local Utils = require("config.utils.make.utils")
+local Parser = require("config.utils.make.modules.parser")
+local Utils = require("config.utils.make.shared.utils")
 
 ---@class Bear
 local M = {}

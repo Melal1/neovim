@@ -1,7 +1,7 @@
 local M = {}
 
 function ExeFiles(FilePath)
-	local MakeRoot = require("config.utils.make.finder")
+	local MakeRoot = require("config.utils.make.shared.finder")
 	local Root = MakeRoot.FindRoot(FilePath, 4, { "build", "Build", "bin" })
 	if not Root then
 		vim.notify("Could not find project root", vim.log.levels.ERROR)
