@@ -1,5 +1,4 @@
----@brief
-
+--@brief
 ---
 --- https://clangd.llvm.org/installation.html
 ---
@@ -11,8 +10,8 @@
 ---   ```
 --- - clangd relies on a [JSON compilation database](https://clang.llvm.org/docs/JSONCompilationDatabase.html)
 ---   specified as compile_commands.json, see https://clangd.llvm.org/installation#compile_commandsjson
--- https://clangd.llvm.org/extensions.html#switch-between-sourceheader
 
+-- https://clangd.llvm.org/extensions.html#switch-between-sourceheader
 local function switch_source_header(bufnr, client)
 	local method_name = "textDocument/switchSourceHeader"
 	---@diagnostic disable-next-line:param-type-mismatch
@@ -61,66 +60,122 @@ local function symbol_info(bufnr, client)
 	end, bufnr)
 end
 
-local disable_tidy = true
-
-local clang_tidy_checks =
-	"clang-analyzer-*,bugprone-*,performance-*,portability-*,readability-*,modernize-*,misc-*,-clang-analyzer-cplusplus*,-clang-analyzer-optin*,-bugprone-easily-swappable-parameters,-clang-analyzer-security.FloatLoopCounter,-clang-analyzer-security.insecureAPI*"
-
-local function get_cmd()
-	-- vim.notify("Called get_cmd")
-	if disable_tidy then
-		return {
-			"clangd",
-			"--background-index",
-			"--header-insertion=iwyu",
-			"--completion-style=detailed",
-			"--function-arg-placeholders",
-			"--clang-tidy=false",
-		}
-	else
-		return {
-			"clangd",
-			"--background-index",
-			"--header-insertion=iwyu",
-			"--completion-style=detailed",
-			"--function-arg-placeholders",
-			"--clang-tidy",
-			"--clang-tidy-checks=" .. clang_tidy_checks,
-		}
+local function is_tidy_enabled()
+	if vim.g.clangd_tidy_enabled == nil then
+		vim.g.clangd_tidy_enabled = false
 	end
+	return vim.g.clangd_tidy_enabled
 end
 
-local function reuse_client(client, config)
-	return not disable_tidy and client.name == "clangd"
+local last_cmd = nil
+
+local function get_cmd()
+	local cmd = {
+		"clangd",
+		"--background-index",
+		"--header-insertion=iwyu",
+		"--completion-style=detailed",
+		"--function-arg-placeholders",
+	}
+	if is_tidy_enabled() then
+		table.insert(cmd, "--clang-tidy")
+	else
+		table.insert(cmd, "--clang-tidy=false")
+	end
+	last_cmd = vim.deepcopy(cmd)
+	return cmd
+end
+
+local function restart_clangd()
+	for _, client in ipairs(vim.lsp.get_clients({ name = "clangd" })) do
+		client:stop(true)
+	end
+	vim.defer_fn(function()
+		vim.lsp.enable("clangd", true)
+	end, 200)
+end
+
+local function set_tidy(enabled)
+	vim.g.clangd_tidy_enabled = enabled and true or false
+	vim.notify("clang-tidy " .. (vim.g.clangd_tidy_enabled and "enabled" or "disabled"))
+	restart_clangd()
+end
+
+local clang_tidy_lines = {
+	"Checks: >",
+	"  clang-analyzer-*,",
+	"  bugprone-*,",
+	"  performance-*,",
+	"  portability-*,",
+	"  readability-*,",
+	"  modernize-*,",
+	"  misc-*,",
+	"  -clang-analyzer-cplusplus*,",
+	"  -clang-analyzer-optin*,",
+	"  -bugprone-easily-swappable-parameters,",
+	"  -clang-analyzer-security.FloatLoopCounter,",
+	"  -clang-analyzer-security.insecureAPI*",
+	"WarningsAsErrors: ''",
+}
+
+local function get_root_dir(client)
+	if client and client.config and client.config.root_dir then
+		return client.config.root_dir
+	end
+	if client and client.workspace_folders and client.workspace_folders[1] then
+		return vim.uri_to_fname(client.workspace_folders[1].uri)
+	end
+	return nil
+end
+
+local function create_clang_tidy(client)
+	local root = get_root_dir(client)
+	if not root or root == "" then
+		vim.notify("clangd root dir not found", vim.log.levels.ERROR)
+		return
+	end
+	local path = root .. "/.clang-tidy"
+	if vim.uv.fs_stat(path) then
+		vim.notify(".clang-tidy already exists: " .. path, vim.log.levels.WARN)
+		return
+	end
+	local ok, err = pcall(vim.fn.writefile, clang_tidy_lines, path)
+	if not ok then
+		vim.notify("Failed to create .clang-tidy: " .. tostring(err), vim.log.levels.ERROR)
+		return
+	end
+	vim.notify("Created .clang-tidy at " .. path)
 end
 
 local navic = require("nvim-navic")
-local navbud = require"nvim-navbuddy"
+local navbud = require("nvim-navbuddy")
 
 ---@class ClangdInitializeResult: lsp.InitializeResult
 ---@field offsetEncoding? string
+
+---@type vim.lsp.Config
 return {
-	cmd = function(dispatchers)
+	cmd = function(dispatchers, config)
 		local cmd = get_cmd()
+		config._last_cmd = cmd
 		return vim.lsp.rpc.start(cmd, dispatchers)
 	end,
 	filetypes = { "c", "cpp", "objc", "objcpp", "cuda" },
-	reuse_client = reuse_client,
-
 	root_markers = {
+		".clangd",
+		".clang-tidy",
+		".clang-format",
+		"Makefile",
+		"CMakeLists.txt",
 		"compile_commands.json",
 		"compile_flags.txt",
 		"configure.ac", -- AutoTools
-		"Makefile",
-		"configure.ac",
-		"configure.in",
-		"config.h.in",
-		"meson.build",
-		"meson_options.txt",
-		"build.ninja",
 		".git",
 	},
-
+	get_language_id = function(_, ftype)
+		local t = { objc = "objective-c", objcpp = "objective-cpp", cuda = "cuda-cpp" }
+		return t[ftype] or ftype
+	end,
 	capabilities = {
 		textDocument = {
 			completion = {
@@ -129,47 +184,47 @@ return {
 		},
 		offsetEncoding = { "utf-8", "utf-16" },
 	},
-	---@param client vim.lsp.Client
-	---@param bufnr integer
+	---@param init_result ClangdInitializeResult
+	on_init = function(client, init_result)
+		if init_result.offsetEncoding then
+			client.offset_encoding = init_result.offsetEncoding
+		end
+	end,
 	on_attach = function(client, bufnr)
+		-- Navic attach
+
 		navic.attach(client, bufnr)
-    navbud.attach(client,bufnr)
-		vim.keymap.set(
-			"n",
-			"<leader>ch",
-			"<cmd>LspClangdSwitchSourceHeader<cr>",
-			{ desc = "Switch Source/Header (C/C++)" }
-		)
+		navbud.attach(client, bufnr)
+
+		vim.api.nvim_buf_create_user_command(bufnr, "LspClangdDisableTidy", function()
+			set_tidy(false)
+		end, { desc = "Disable clang-tidy and restart clangd" })
+
+		vim.api.nvim_buf_create_user_command(bufnr, "LspClangdEnableTidy", function()
+			set_tidy(true)
+		end, { desc = "Enable clang-tidy and restart clangd" })
+
+		vim.api.nvim_buf_create_user_command(bufnr, "LspClangdToggleTidy", function()
+			set_tidy(not is_tidy_enabled())
+		end, { desc = "Toggle clang-tidy and restart clangd" })
 
 		vim.api.nvim_buf_create_user_command(bufnr, "LspClangdSwitchSourceHeader", function()
 			switch_source_header(bufnr, client)
 		end, { desc = "Switch between source/header" })
+
+		vim.api.nvim_buf_create_user_command(bufnr, "LspClangdCreateTidy", function()
+			create_clang_tidy(client)
+		end, { desc = "Create .clang-tidy in project root" })
 
 		vim.api.nvim_buf_create_user_command(bufnr, "LspClangdShowSymbolInfo", function()
 			symbol_info(bufnr, client)
 		end, { desc = "Show symbol info" })
 
 		if client.server_capabilities.inlayHintProvider then
-			vim.api.nvim_buf_create_user_command(bufnr, "ToggleInlayHints", function()
+			vim.api.nvim_buf_create_user_command(bufnr, "LspToggleInlayHints", function()
 				local enabled = vim.lsp.inlay_hint.is_enabled()
 				vim.lsp.inlay_hint.enable(not enabled)
 			end, { desc = "Toggle inlay hints" })
 		end
-
-		vim.api.nvim_buf_create_user_command(bufnr, "ToggelTidy", function()
-			if disable_tidy then
-				vim.notify("Enabling clang-tidy")
-			else
-				vim.notify("Disabling clang-tidy")
-			end
-			disable_tidy = not disable_tidy
-			vim.notify("Toggled clangd cmd, restarting LSP...")
-			if client.name == "clangd" then
-				client.stop(client, true)
-			end
-			vim.defer_fn(function()
-				vim.cmd("update | e!")
-			end, 500)
-		end, { desc = "Toggle clangd cmd and restart LSP" })
 	end,
 }

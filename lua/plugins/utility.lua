@@ -1,4 +1,33 @@
 return {
+	-- BuildSystem: make.nvim
+	{
+		dir = "~/Dev/projects/lua/make.nvim",
+		name = "make.nvim",
+    enabled = true;
+		dependencies = {
+			"nvim-telescope/telescope.nvim",
+		},
+		ft = { "cpp" },
+		opts = {
+			SourceExtensions = { ".cpp", ".c", ".cc", ".cxx" },
+			RootMarkers = { ".git", "src", "include", "build", "Makefile" },
+			MaxSearchLevels = 5,
+			CacheUseHash = true,
+			CacheFormat = "luabytecode", -- or "mpack"
+			CacheDir = ".cache/make.nvim",
+			CacheLog = true,
+			EnableBackup = false,
+			MakefileVars = {
+				CXX = "g++",
+				DEBUGFLAGS = "-std=c++17 -g -O0",
+				RELEASEFLAGS = "-std=c++17 -O3 -DNDEBUG",
+				CXXFLAGS = "$(DEBUGFLAGS)",
+				BUILD_MODE = "debug",
+				BUILD_DIR = "build",
+			},
+		},
+	},
+
 	--Debugging: DAP
 	{
 		"mfussenegger/nvim-dap",
@@ -76,10 +105,10 @@ return {
 					miDebuggerPath = "/run/current-system/sw/bin/gdb",
 					cwd = "${workspaceFolder}",
 					program = function()
-						local msg = require("config.utils.debug").Debug(true)
+						local msg = require("make").Debug(true)
 						return msg
 					end,
-					stopAtEntry = true,
+					stopAtEntry = false,
 				},
 				{
 					name = "Attach to gdbserver :1234",
@@ -90,10 +119,9 @@ return {
 					miDebuggerPath = "/run/current-system/sw/bin/gdb",
 					cwd = "${workspaceFolder}",
 					program = function()
-						local msg = require("config.utils.debug").Debug()
-						return msg
+						return vim.fn.input("Path to executable: ", vim.fn.getcwd() .. "/", "file")
 					end,
-					stopAtEntry = true,
+					stopAtEntry = false,
 				},
 				{
 					name = "Launch file",
@@ -103,7 +131,7 @@ return {
 						return vim.fn.input("Path to executable: ", vim.fn.getcwd() .. "/", "file")
 					end,
 					cwd = "${workspaceFolder}",
-					stopAtEntry = true,
+					stopAtEntry = false,
 				},
 			}
 			dap.configurations.lua = {
