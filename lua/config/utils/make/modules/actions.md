@@ -16,6 +16,14 @@ Side effects/notes:
 - Writes new target lines to the Makefile.
 - For executable targets, prompts for dependencies and link flags.
 - For object targets, can trigger Bear to update compile_commands.
+Detailed explanation:
+- Validate file extension unless `BypassCheck` is true.
+- Parse Makefile variables to resolve build output paths for downstream tooling.
+- Compute the file’s relative path and basename for marker and target names.
+- Prompt for target type:
+  - For object targets, generate the object rule and append it directly.
+  - For executable targets, collect dependencies and link flags, then generate the full block.
+- Write the new lines to disk and notify on success/failure.
 Example:
 ```lua
 local ok = M.AddToMakefile("/p/app/Makefile", "/p/app/src/main.cpp", "/p/app", content, false, cfg)
@@ -36,6 +44,12 @@ Returns:
 Side effects/notes:
 - Opens pickers to select object dependencies and link flags.
 - Replaces the entire marker section for the target.
+Detailed explanation:
+- Resolve the target’s relative path and locate its existing entry (or build entries on demand).
+- Gather existing deps and links to preselect in pickers.
+- If no object files exist, only the link selector is shown and links are updated in-place.
+- Otherwise, pick new dependencies and links, then remove the old marker block.
+- Regenerate the executable block with updated deps/links and write it back.
 Example:
 ```lua
 M.EditTarget("/p/app/Makefile", "/p/app/src/main.cpp", "/p/app", content, nil, nil, cfg)
@@ -68,6 +82,11 @@ Returns:
 Side effects/notes:
 - Uses picker with previews to select multiple sections.
 - Rewrites the Makefile without selected blocks.
+Detailed explanation:
+- Build a picker list from analyzed sections and attach a preview of each block.
+- Let the user select one or more sections to remove.
+- Create a delete map that covers the marker block (and the blank line above it).
+- Reassemble the Makefile content without the selected lines and write it back.
 Example:
 ```lua
 M.Remove("/p/app/Makefile", content)

@@ -15,6 +15,7 @@ Config.DefaultConfig = {
 	RootMarkers = { ".git", "src", "include", "build", "Makefile" },
 	MaxSearchLevels = 5,
 	CacheUseHash = true,
+	CacheFormat = "luabytecode", -- "mpack" or "luabytecode"
 	EnableBackup = false,
 	LinkOptions = {}, -- deprecated: link options are stored in the Makefile links block
 	MakefileVars = {

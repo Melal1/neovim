@@ -11,6 +11,7 @@ Keys:
 - `RootMarkers` (string[]): Files/dirs used to detect project root.
 - `MaxSearchLevels` (integer): How many parent directories to search for markers.
 - `CacheUseHash` (boolean): Whether parser cache uses a content hash.
+- `CacheFormat` (string): Cache encoding format (`"mpack"` or `"luabytecode"`). Bytecode is faster to load but not portable across Lua versions and is executable.
 - `EnableBackup` (boolean): Global default for Makefile backups.
 - `LinkOptions` (table): Deprecated; link options now live in the Makefile links block.
 - `MakefileVars` (table): Default Makefile variable values:

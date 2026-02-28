@@ -84,6 +84,12 @@ Side effects/notes:
 - Updates `CXXFLAGS`, `BUILD_DIR`, and `BUILD_MODE`.
 - Normalizes `BUILD_DIR` by removing trailing `/debug` or `/release`.
 - Writes the updated content back to disk.
+Detailed explanation:
+- Normalize the requested mode to `debug`/`release` and reject invalid input.
+- Update (or insert) `CXXFLAGS` to point at `$(DEBUGFLAGS)` or `$(RELEASEFLAGS)`.
+- Parse existing `BUILD_DIR`, strip a trailing mode segment, and reinsert it cleanly.
+- Update (or insert) `BUILD_MODE` to the normalized mode.
+- Join the lines and write the file back to disk.
 Example:
 ```lua
 local ok = M.SetBuildMode("/p/app/Makefile", content, "release")
@@ -99,6 +105,11 @@ Returns:
 Side effects/notes:
 - Deletes the resolved `BUILD_DIR/BUILD_MODE` directory using `vim.fn.delete(..., "rf")`.
 - Refuses to clean unsafe paths like `/`.
+Detailed explanation:
+- Parse variables to compute the effective build output directory.
+- Resolve relative build paths against the Makefile directory.
+- Normalize and validate the deletion path to avoid unsafe deletions.
+- If the path does not exist, report a no-op; otherwise delete recursively.
 Example:
 ```lua
 local ok = M.CleanBuild("/p/app/Makefile", content)

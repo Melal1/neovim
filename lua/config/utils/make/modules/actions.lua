@@ -313,6 +313,7 @@ function M.Remove(MakefilePath, Content)
 
 	local map = {}
 	local PickerEntries = {}
+	local lines = vim.split(Content or "", "\n", { plain = true, trimempty = false })
 
 	local picker = Helpers.GetPickerOrWarn("Telescope is required for editing targets")
 	if not picker then
@@ -323,7 +324,7 @@ function M.Remove(MakefilePath, Content)
 		table.insert(PickerEntries, {
 			value = Entry.startLine,
 			display = Entry.baseName .. " ( " .. Entry.analysis.type .. " )",
-			preview_text = Parser.ReadContentBetweenLines(Content, Entry.startLine, Entry.endLine, true),
+			preview_text = Parser.ReadContentBetweenLines(lines, Entry.startLine, Entry.endLine, true),
 		})
 		map[Entry.startLine] = Entry
 	end

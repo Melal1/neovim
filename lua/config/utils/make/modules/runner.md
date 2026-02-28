@@ -53,6 +53,11 @@ Returns:
 - `boolean`: `true` if picker opens, `false` on error.
 Side effects/notes:
 - Runs `make <targets...>` in a terminal.
+Detailed explanation:
+- Collect all targets from analyzed sections and sort them for display.
+- Present a checklist picker so multiple targets can be selected.
+- Map display labels back to real target names.
+- Execute `make` with the selected targets in a terminal buffer.
 Example:
 ```lua
 M.PickAndRunTargets(content)
@@ -68,6 +73,12 @@ Returns:
 Side effects/notes:
 - If no target exists, it generates a new executable section and appends it.
 - Uses link selection UI if link options are present.
+Detailed explanation:
+- Resolve the Makefile path from the current buffer and set parser cache context.
+- Compute the current file’s relative path to the Makefile directory.
+- If a matching marker exists, immediately invoke `on_run`.
+- Otherwise, ensure required Makefile variables exist, then generate a new executable target.
+- Append the new target to the Makefile and invoke `on_run`.
 Example:
 ```lua
 M.FastRun(cfg, function() print("ready to run") end)

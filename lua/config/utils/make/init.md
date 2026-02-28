@@ -8,7 +8,7 @@ Returns:
 - None.
 Side effects/notes:
 - Updates `M.Config`.
-- Sets `Parser.CacheUseHash` and `Utils.BackupEnabled` from config.
+- Sets `Parser.CacheUseHash`, `Parser.CacheFormat`, and `Utils.BackupEnabled` from config.
 Example:
 ```lua
 require("config.utils.make").Setup({ EnableBackup = false })
@@ -172,6 +172,13 @@ Returns:
 Side effects/notes:
 - Finds project root, ensures Makefile variables, and routes to command handlers.
 - Supports: `add`, `edit`, `run`, `runb`, `build`, `tasks`, `edit_all`, `remove`, `analysis`, `bear`, `bearall`, `mode`, `clean`, `link`, `open`.
+Detailed explanation:
+- Parse the subcommand (default `run`) and validate argument count.
+- Locate the project root using configured root markers.
+- Compute `MakefilePath` and set parser cache context.
+- Create a Makefile if missing and the user approves.
+- Ensure required Makefile variables exist; if inserted, re-run the command.
+- Dispatch to the appropriate handler module based on the subcommand.
 Example:
 ```lua
 M.Make({ "build" })

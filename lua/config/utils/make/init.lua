@@ -14,12 +14,21 @@ local Build = require("config.utils.make.modules.build")
 
 M.Config = Config.DefaultConfig
 Utils.BackupEnabled = M.Config.EnableBackup
+if M.Config.CacheUseHash ~= nil then
+	Parser.CacheUseHash = M.Config.CacheUseHash
+end
+if M.Config.CacheFormat ~= nil then
+	Parser.CacheFormat = M.Config.CacheFormat
+end
 
 ---@param UserConfig table|nil
 function M.Setup(UserConfig)
 	M.Config = vim.tbl_deep_extend("force", M.Config, UserConfig or {})
 	if M.Config.CacheUseHash ~= nil then
 		Parser.CacheUseHash = M.Config.CacheUseHash
+	end
+	if M.Config.CacheFormat ~= nil then
+		Parser.CacheFormat = M.Config.CacheFormat
 	end
 	if M.Config.EnableBackup ~= nil then
 		Utils.BackupEnabled = M.Config.EnableBackup

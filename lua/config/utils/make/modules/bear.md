@@ -50,6 +50,12 @@ Returns:
 - `boolean`: `true` if a Bear command was launched.
 Side effects/notes:
 - Scans sections for an object target matching the file.
+Detailed explanation:
+- Parse Makefile variables to resolve build paths.
+- Determine the relative path to the current file (if not provided).
+- Analyze all sections and find the one matching the file path.
+- Locate its object target and resolve placeholders like `$(BUILD_DIR)`.
+- Run `bear --append -- make -B <target>` in the project root.
 Example:
 ```lua
 M.CurrentFile(content, "/p/app", "./src/main.cpp")
@@ -88,6 +94,11 @@ Returns:
 - `boolean`: `true` if picker opens, `false` on error.
 Side effects/notes:
 - Uses picker with previews to select sections.
+Detailed explanation:
+- Parse Makefile variables and analyze all sections.
+- Build a picker list of sections that contain object targets.
+- For each selected section, pick the first object target and resolve it.
+- Run a single Bear command that builds all selected targets.
 Example:
 ```lua
 M.SelectTarget(content, "/p/app")

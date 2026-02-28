@@ -1,14 +1,15 @@
 local M = {}
 
 function ExeFiles(FilePath)
-	local MakeRoot = require("config.utils.make.shared.finder")
-	local Root = MakeRoot.FindRoot(FilePath, 4, { "build", "Build", "bin" })
+	local Finder = require("config.utils.make.shared.finder")
+  local Parser = require("config.utils.make.modules.parser")
+	local Root = Finder.FindRoot(FilePath, 4, { "Makefile" })
 	if not Root then
 		vim.notify("Could not find project root", vim.log.levels.ERROR)
 		return nil, -1
 	end
-
-	local BuildDir = Root.Path .. "/" .. Root.Marker
+ 
+  P
 	local FsScandir = vim.loop.fs_scandir(BuildDir)
 	if not FsScandir then
 		vim.notify("Could not open build directory: " .. BuildDir, vim.log.levels.ERROR)

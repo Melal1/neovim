@@ -103,6 +103,11 @@ Returns:
 - `okay` (boolean): `true` when inside root.
 Side effects/notes:
 - Normalizes both paths to absolute and ensures root ends with `/`.
+Detailed explanation:
+- Normalize the file path and root path to absolute, comparable forms.
+- Ensure the root path ends with a `/` so prefix checks are consistent.
+- If the file path starts with the root prefix, return a `./`-relative path.
+- Otherwise, return an error message and `false`.
 Example:
 ```lua
 local rel, ok = Utils.GetRelativePath("/p/app/src/main.cpp", "/p/app")
@@ -132,6 +137,10 @@ Returns:
 - `string`: Output directory path, with `BUILD_MODE` appended if set.
 Side effects/notes:
 - If `BUILD_DIR` already ends with `/BUILD_MODE`, it is returned as-is.
+Detailed explanation:
+- Read `BUILD_DIR` (default `./build`) and `BUILD_MODE` (default empty).
+- If a mode is set and `BUILD_DIR` already ends with that mode, return it unchanged.
+- Otherwise, append `/<mode>` to `BUILD_DIR`.
 Example:
 ```lua
 local out = Utils.GetBuildOutputDir({ BUILD_DIR = "./build", BUILD_MODE = "debug" })

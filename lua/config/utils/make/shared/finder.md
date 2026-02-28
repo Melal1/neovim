@@ -12,6 +12,11 @@ Returns:
 Side effects/notes:
 - Uses `vim.loop.fs_stat` to detect markers.
 - Stops when reaching filesystem root or max levels.
+Detailed explanation:
+- Validate the starting directory and normalize defaults.
+- For each level, check each marker name under the current path.
+- If a marker exists, return the current path + marker info.
+- Otherwise, move to the parent directory and continue until limits are reached.
 Example:
 ```lua
 local Finder = require("config.utils.make.shared.finder")
@@ -33,6 +38,11 @@ Returns:
 Side effects/notes:
 - Uses a `find` shell command; can be slow on large trees.
 - Returns only the first match.
+Detailed explanation:
+- Construct the header filename (`<Basename>.h`) and run `find` from `RootPath`.
+- If no results are returned, report `nil`.
+- Take the first match, compute its directory, and try to make it relative to `RootPath`.
+- Fall back to the absolute directory if a relative path cannot be built.
 Example:
 ```lua
 local dir = Finder.FindHeaderDirectory("utils", "/p/app")

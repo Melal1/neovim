@@ -43,6 +43,12 @@ Returns:
 Side effects/notes:
 - Resolves header include paths and generates `-I` flags.
 - Adds optional `LINKS` assignment if provided.
+Detailed explanation:
+- Build object/executable target names under `$(BUILD_DIR)/$(BUILD_MODE)`.
+- Choose `CC`/`CFLAGS` vs `CXX`/`CXXFLAGS` based on provided vars.
+- For each dependency, locate its header directory and collect unique `-I` flags.
+- If any headers are missing, return the missing list and `false`.
+- Emit marker start, object rule, optional `LINKS`, executable rule, and `run` rule.
 Example:
 ```lua
 local lines, ok = Generator.ExecutableTarget(
@@ -65,6 +71,10 @@ Returns:
 - `boolean|nil`: `true` if already present, `false` if inserted, `nil` on write failure.
 Side effects/notes:
 - Writes updated content to disk if variables are missing.
+Detailed explanation:
+- Use `Parser.HasReqVars` to check for required variable definitions.
+- If missing, generate the default variable block and prepend it to the file.
+- Write the updated content back to disk and report success/failure.
 Example:
 ```lua
 local ok = Generator.EnsureMakefileVariables("/p/app/Makefile", content, cfg.MakefileVars)

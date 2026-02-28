@@ -39,10 +39,10 @@ Example:
 local flags = merge_link_flags({"-lm"}, {"-lpthread"}, "add")
 ```
 
-## parse_links_block(content)
-Purpose: Parse the `# links_start` / `# links_end` block in a Makefile.
+## Parser.ParseLinkOptions(Content)
+Purpose: Parse the `# links_start` / `# links_end` block in a Makefile (delegated to parser cache).
 Inputs:
-- `content` (string|nil): Makefile content.
+- `Content` (string|nil): Makefile content.
 Returns:
 - `groups` (table[]): List of `{ name, flags }`.
 - `individuals` (string[]): Link flags not part of groups.
@@ -50,7 +50,7 @@ Side effects/notes:
 - Filters individual flags that are already part of a group.
 Example:
 ```lua
-local groups, individuals = parse_links_block(content)
+local groups, individuals = Parser.ParseLinkOptions(content)
 ```
 
 ## build_links_block(groups, individuals)
@@ -75,6 +75,11 @@ Returns:
 - `string`: Updated Makefile content.
 Side effects/notes:
 - Removes the block entirely if no links remain.
+Detailed explanation:
+- Scan the file to locate existing `# links_start` / `# links_end` boundaries.
+- If no links remain, remove the entire block (or return original content if none exists).
+- Otherwise, rebuild the block and either replace the existing block or prepend a new one.
+- Preserve the rest of the file content outside of the block.
 Example:
 ```lua
 local new_content = apply_links_block(content, groups, individuals)
@@ -88,6 +93,11 @@ Returns:
 - `entries` (table[]): Picker items with `value` and `display`.
 - `flags_by_value` (table): Map from entry value to flags.
 - `all_flags` (string[]): Deduped list of all flags.
+Detailed explanation:
+- Parse link groups and individual flags from the Makefile.
+- Build picker entries for each group and each individual flag.
+- Create a lookup table that expands each entry value to its flags.
+- Add a synthetic `__ALL__` entry that expands to every known flag.
 Example:
 ```lua
 local entries, map, all = build_link_entries(content)
@@ -147,6 +157,10 @@ Inputs:
 - `existing_flags` (string[]): Current flags.
 Returns:
 - `string[]`: Entry values to preselect.
+Detailed explanation:
+- Build a set of currently selected flags for fast lookup.
+- For each entry (except `__ALL__`), check if all its flags are present.
+- Return the list of entry values that are fully satisfied by existing flags.
 Example:
 ```lua
 local pre = build_preselected_link_values(entries, map, {"-lm"})
@@ -160,6 +174,11 @@ Inputs:
 - `links` (string[]): Link flags.
 Returns:
 - `string[]`: Updated section lines.
+Detailed explanation:
+- Locate the target’s main rule line and any existing `LINKS` assignment line.
+- If `links` is empty, remove the `LINKS` line when present.
+- Otherwise, build a new `target: LINKS += ...` line.
+- Replace the existing `LINKS` line or insert it near the target rule.
 Example:
 ```lua
 local out = update_section_links(lines, "app", {"-lm"})
@@ -175,6 +194,11 @@ Returns:
 - None.
 Side effects/notes:
 - Prompts for group names, flags, and confirmation.
+Detailed explanation:
+- Load existing link groups and individuals from the Makefile.
+- If adding a group, prompt for a unique name and its flags.
+- If adding individuals, filter out flags already included in any group.
+- Confirm the action and save the updated links block.
 Example:
 ```lua
 manage_link_options_add(picker, path, content)
@@ -202,6 +226,11 @@ Returns:
 - None.
 Side effects/notes:
 - Supports removing entire groups or specific flags from a group.
+Detailed explanation:
+- Load existing link groups and individuals from the Makefile.
+- For group removal, let the user remove the whole group or selected flags within it.
+- For individual removal, let the user pick which flags to remove.
+- Save the updated links block and notify on success/failure.
 Example:
 ```lua
 manage_link_options_remove(picker, path, content)
@@ -215,6 +244,10 @@ Inputs:
 - `makefile_content` (string): Current content.
 Returns:
 - None.
+Detailed explanation:
+- Load current groups and let the user pick a group to edit.
+- Offer rename, add, remove, or replace actions for the group.
+- Validate input, confirm destructive actions, then save changes.
 Example:
 ```lua
 manage_link_options_edit(picker, path, content)
@@ -282,6 +315,11 @@ Returns:
 - `boolean`: `true` if flow started, `false` on picker error.
 Side effects/notes:
 - Supports an "All" entry to select all flags.
+Detailed explanation:
+- Build picker entries from link groups and individual flags.
+- Preselect entries whose flags are already present (unless disabled via `opts`).
+- Let the user pick multiple entries, including a special `All` entry.
+- Expand the chosen entries into a normalized, deduped flag list and call `callback`.
 Example:
 ```lua
 M.SelectLinks({"-lm"}, content, function(flags) print(vim.inspect(flags)) end)
@@ -309,6 +347,11 @@ Inputs:
 - `new_links` (string[]): New link flags.
 Returns:
 - `string|nil`: Updated content or `nil` on error.
+Detailed explanation:
+- Locate the marker block for `relative_path` and extract its section lines.
+- Determine the executable target name using the section content and `base_name`.
+- Update or remove the `LINKS` line inside the section based on `new_links`.
+- Rebuild the full Makefile by replacing the old section with the updated one.
 Example:
 ```lua
 local updated = M.UpdateLinksForEntry(content, "./src/main.cpp", "main", {"-lm"})

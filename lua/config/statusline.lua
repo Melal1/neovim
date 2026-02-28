@@ -119,7 +119,6 @@ local diag_enabled = false
 math.randomseed(os.time())
 local funny = { "Creative", "EasyMode", "Spectator", "Redstone", "!Xp", " " }
 
-
 -- AUTOCOMMAND: LSP attach/detach + BufEnter -----------------------------------
 vim.api.nvim_create_autocmd({ "LspAttach", "LspDetach", "BufEnter" }, {
 	callback = function(args)

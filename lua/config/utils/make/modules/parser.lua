@@ -7,6 +7,7 @@ Parser.CacheRoot = nil
 Parser.CacheMakefilePath = nil
 Parser.CacheLog = true
 Parser.CacheUseHash = true
+Parser.CacheFormat = "mpack"
 
 ---@param root_path string|nil
 ---@param makefile_path string|nil
@@ -31,16 +32,242 @@ local function cache_key_for(root_path)
 	return normalized
 end
 
-local function cache_file_for(root_path)
-	local base = vim.fn.expand("~/.cache/MakeNvim")
-	return base .. "/" .. cache_key_for(root_path) .. ".json"
+local function cache_format()
+	local fmt = (Parser.CacheFormat or "mpack"):lower()
+	if fmt == "luabytecode" or fmt == "bytecode" or fmt == "luac" then
+		return "luabytecode"
+	end
+	return "mpack"
 end
 
-local function log_cache(message)
-	if not Parser.CacheLog then
+local function cache_file_for(root_path)
+	local base = vim.fn.expand("~/.cache/MakeNvim")
+	local ext = cache_format() == "luabytecode" and ".luac" or ".mpack"
+	return base .. "/" .. cache_key_for(root_path) .. ext
+end
+
+local function read_cache_file(cache_file)
+	local file = io.open(cache_file, "rb")
+	if not file then
+		return nil
+	end
+	local content = file:read("*a")
+	file:close()
+	if not content or content == "" then
+		return nil
+	end
+	return content
+end
+
+local function write_cache_file(cache_file, content)
+	local file = io.open(cache_file, "wb")
+	if not file then
+		return false
+	end
+	file:write(content)
+	file:close()
+	return true
+end
+
+local function log_cache(message, opts)
+	if not Parser.CacheLog or (opts and opts.silent) then
 		return
 	end
 	vim.notify(message, vim.log.levels.DEBUG)
+end
+
+local function serialize_lua_value(value, seen)
+	local t = type(value)
+	if t == "string" then
+		return string.format("%q", value)
+	elseif t == "number" or t == "boolean" then
+		return tostring(value)
+	elseif t == "table" then
+		if seen[value] then
+			return "nil"
+		end
+		seen[value] = true
+		local parts = {}
+		local idx = 0
+		for _, item in ipairs(value) do
+			idx = idx + 1
+			parts[idx] = serialize_lua_value(item, seen)
+		end
+		for k, v in pairs(value) do
+			local is_array = type(k) == "number" and k >= 1 and k <= #value and math.floor(k) == k
+			if not is_array then
+				local key
+				if type(k) == "string" and k:match("^[%a_][%w_]*$") then
+					key = k
+				else
+					key = "[" .. serialize_lua_value(k, seen) .. "]"
+				end
+				idx = idx + 1
+				parts[idx] = key .. " = " .. serialize_lua_value(v, seen)
+			end
+		end
+		seen[value] = nil
+		return "{" .. table.concat(parts, ", ") .. "}"
+	end
+	return "nil"
+end
+
+local function encode_cache_payload(payload)
+	if cache_format() == "luabytecode" then
+		local source = "return " .. serialize_lua_value(payload, {})
+		local chunk = load(source)
+		if not chunk then
+			return nil
+		end
+		return string.dump(chunk)
+	end
+	local ok_encode, encoded = pcall(vim.mpack.encode, payload)
+	if not ok_encode or not encoded then
+		return nil
+	end
+	return encoded
+end
+
+local function decode_cache_payload(raw)
+	if cache_format() == "luabytecode" then
+		local chunk = load(raw)
+		if not chunk then
+			return nil
+		end
+		local ok, payload = pcall(chunk)
+		if not ok then
+			return nil
+		end
+		return payload
+	end
+	local ok_decode, decoded = pcall(vim.mpack.decode, raw)
+	if not ok_decode or not decoded then
+		return nil
+	end
+	return decoded
+end
+
+local function normalize_lines(content)
+	if type(content) == "table" then
+		return content
+	end
+	if not content or content == "" then
+		return {}
+	end
+	return vim.split(content, "\n", { plain = true, trimempty = false })
+end
+
+local function slice_lines(lines, start_line, end_line, return_table)
+	local out = {}
+	if not lines or #lines == 0 then
+		return return_table and out or ""
+	end
+	for i = start_line + 1, end_line - 1 do
+		table.insert(out, lines[i] or "")
+	end
+	if return_table then
+		return out
+	end
+	return table.concat(out, "\n")
+end
+
+local function parse_variables_raw(Content)
+	local Variables = {}
+	if not Content then
+		return Variables
+	end
+	for Line in Content:gmatch("[^\n]+") do
+		Line = Line:match("^%s*(.-)%s*$")
+		if Line and Line ~= "" and not Line:match("^#") then
+			local VarName, VarValue = Line:match("^([%w_]+)%s*:?=%s*(.*)$")
+			if VarName and VarValue then
+				Variables[VarName] = VarValue
+			end
+		end
+	end
+	return Variables
+end
+
+local function parse_links_block(content)
+	local groups = {}
+	local group_map = {}
+	local individuals = {}
+	local individual_map = {}
+
+	if not content or content == "" then
+		return groups, individuals
+	end
+
+	local in_block = false
+	for _, line in ipairs(vim.split(content, "\n", { plain = true })) do
+		if line:match("^%s*#%s*links_start") then
+			in_block = true
+			goto continue
+		end
+		if line:match("^%s*#%s*links_end") then
+			break
+		end
+		if not in_block then
+			goto continue
+		end
+
+		local group_name, rest = line:match("^%s*#%s*group:%s*(%S+)%s*(.*)$")
+		if group_name then
+			local flags = {}
+			for flag in (rest or ""):gmatch("%S+") do
+				table.insert(flags, flag)
+			end
+			if #flags > 0 then
+				local group = group_map[group_name]
+				if not group then
+					group = { name = group_name, flags = {} }
+					group_map[group_name] = group
+					table.insert(groups, group)
+				end
+				for _, flag in ipairs(flags) do
+					local seen = false
+					for _, existing in ipairs(group.flags) do
+						if existing == flag then
+							seen = true
+							break
+						end
+					end
+					if not seen then
+						table.insert(group.flags, flag)
+					end
+				end
+			end
+			goto continue
+		end
+
+		local link_rest = line:match("^%s*#%s*link:%s*(.*)$")
+		if link_rest then
+			for flag in link_rest:gmatch("%S+") do
+				if not individual_map[flag] then
+					individual_map[flag] = true
+					table.insert(individuals, flag)
+				end
+			end
+		end
+
+		::continue::
+	end
+
+	local group_flag_map = {}
+	for _, group in ipairs(groups) do
+		for _, flag in ipairs(group.flags) do
+			group_flag_map[flag] = true
+		end
+	end
+
+	local filtered_individuals = {}
+	for _, flag in ipairs(individuals) do
+		if not group_flag_map[flag] then
+			table.insert(filtered_individuals, flag)
+		end
+	end
+
+	return groups, filtered_individuals
 end
 
 local function is_links_assignment_line(line)
@@ -74,38 +301,66 @@ local function read_makefile_content(makefile_path)
 	return Utils.ReadFile(makefile_path)
 end
 
+local function resolve_cache_paths(opts)
+	local root_path = nil
+	local makefile_path = nil
+	if type(opts) == "table" then
+		root_path = opts.root_path or opts.root or opts.project_root
+		makefile_path = opts.makefile_path or opts.makefile or opts.makefilePath
+	elseif type(opts) == "string" then
+		root_path = opts
+	end
+	makefile_path = makefile_path or Parser.CacheMakefilePath
+	root_path = root_path or Parser.CacheRoot or vim.fn.getcwd()
+	if (not makefile_path or makefile_path == "") and root_path and root_path ~= "" then
+		local candidate = root_path .. "/Makefile"
+		if vim.loop.fs_stat(candidate) then
+			makefile_path = candidate
+		end
+	end
+
+	local cache_root = root_path
+	if makefile_path and makefile_path ~= "" then
+		cache_root = vim.fn.fnamemodify(makefile_path, ":h")
+	end
+
+	return cache_root, makefile_path
+end
+
 local write_cache
 
-local function try_load_cache(root_path, makefile_path, content)
-	local cache_file = cache_file_for(root_path or vim.fn.getcwd())
-	if not vim.loop.fs_stat(cache_file) then
+local function try_load_cache(root_path, makefile_path, content, opts)
+	local cache_root = root_path or vim.fn.getcwd()
+	local cache_file = cache_file_for(cache_root)
+	local cache_stat = vim.loop.fs_stat(cache_file)
+	if not cache_stat then
 		return nil, nil, cache_file
 	end
 
-	local raw = Utils.ReadFile(cache_file)
+	local raw = read_cache_file(cache_file)
 	if not raw or raw == "" then
 		return nil, nil, cache_file
 	end
 
-	local ok_decode, decoded = pcall(vim.fn.json_decode, raw)
-	if not ok_decode or not decoded or type(decoded.sections) ~= "table" then
+	local decoded = decode_cache_payload(raw)
+	if not decoded or type(decoded.sections) ~= "table" then
 		return nil, nil, cache_file
 	end
 
 	if makefile_path and makefile_path ~= "" then
 		local stat = vim.loop.fs_stat(makefile_path)
 		if stat and decoded.mtime == stat.mtime.sec and decoded.size == stat.size then
-			log_cache("MakeNvim cache hit (mtime/size)")
-			return decoded.sections
+			log_cache("MakeNvim cache hit (mtime/size)", opts)
+			return decoded
 		end
 		if not Parser.CacheUseHash then
-			log_cache("MakeNvim cache miss (mtime/size changed)")
+			log_cache("MakeNvim cache miss (mtime/size changed)", opts)
 			return nil, nil, cache_file
 		end
 	end
 
 	if not Parser.CacheUseHash then
-		log_cache("MakeNvim cache miss (hash disabled)")
+		log_cache("MakeNvim cache miss (hash disabled)", opts)
 		return nil, nil, cache_file
 	end
 
@@ -113,40 +368,55 @@ local function try_load_cache(root_path, makefile_path, content)
 		content = read_makefile_content(makefile_path)
 	end
 	if not content then
-		log_cache("MakeNvim cache miss (no content for hash)")
+		log_cache("MakeNvim cache miss (no content for hash)", opts)
 		return nil, nil, cache_file
 	end
 
 	local ok_hash, hash = pcall(vim.fn.sha256, content)
 	if not ok_hash then
-		log_cache("MakeNvim cache miss (hash error)")
+		log_cache("MakeNvim cache miss (hash error)", opts)
 		return nil, nil, cache_file
 	end
 
 	if decoded.hash ~= hash then
-		log_cache("MakeNvim cache miss (hash mismatch)")
+		log_cache("MakeNvim cache miss (hash mismatch)", opts)
 		return nil, hash, cache_file
 	end
 
-	log_cache("MakeNvim cache hit (hash)")
+	log_cache("MakeNvim cache hit (hash)", opts)
 	if makefile_path and makefile_path ~= "" then
-		write_cache(cache_file, decoded.sections, makefile_path, content)
-		log_cache("MakeNvim cache metadata refreshed")
+		write_cache(cache_file, decoded, makefile_path, content)
+		log_cache("MakeNvim cache metadata refreshed", opts)
 	end
-	return decoded.sections, hash, cache_file
+	return decoded, hash, cache_file
 end
 
-write_cache = function(cache_file, sections, makefile_path, content)
+write_cache = function(cache_file, payload, makefile_path, content)
 	if not cache_file then
 		return
 	end
 	vim.fn.mkdir(vim.fn.expand("~/.cache/MakeNvim"), "p")
-	local payload = { sections = sections }
+	local out = { sections = {} }
+	if type(payload) == "table" then
+		if payload.sections ~= nil or payload.vars ~= nil or payload.links ~= nil then
+			if type(payload.sections) == "table" then
+				out.sections = payload.sections
+			end
+			if type(payload.vars) == "table" then
+				out.vars = payload.vars
+			end
+			if type(payload.links) == "table" then
+				out.links = payload.links
+			end
+		else
+			out.sections = payload
+		end
+	end
 	if makefile_path and makefile_path ~= "" then
 		local stat = vim.loop.fs_stat(makefile_path)
 		if stat then
-			payload.mtime = stat.mtime.sec
-			payload.size = stat.size
+			out.mtime = stat.mtime.sec
+			out.size = stat.size
 		end
 	end
 	if Parser.CacheUseHash then
@@ -156,35 +426,101 @@ write_cache = function(cache_file, sections, makefile_path, content)
 		if content then
 			local ok_hash, hash = pcall(vim.fn.sha256, content)
 			if ok_hash then
-				payload.hash = hash
+				out.hash = hash
 			end
 		end
 	end
-	local ok_encode, encoded = pcall(vim.fn.json_encode, payload)
-	if not ok_encode or not encoded then
+	local encoded = encode_cache_payload(out)
+	if not encoded then
 		return
 	end
-	Utils.WriteFile(cache_file, encoded, false)
+	write_cache_file(cache_file, encoded)
 end
 
 ---@param Content string|nil
 ---@return table<string, string>
-function Parser.ParseVariables(Content)
-	local Variables = {}
-	if not Content then
-		return Variables
+function Parser.ParseVariables(Content, opts)
+	if opts and opts.skip_cache then
+		return parse_variables_raw(Content)
 	end
-	for Line in Content:gmatch("[^\n]+") do
-		Line = Line:match("^%s*(.-)%s*$")
-		if Line and Line ~= "" and not Line:match("^#") then
-			local VarName, VarValue = Line:match("^([%w_]+)%s*:?=%s*(.*)$")
-			if VarName and VarValue then
-				Variables[VarName] = VarValue
-			end
+	local cache_root, makefile_path = resolve_cache_paths(opts)
+	local cached = nil
+	local cache_file = nil
+	if cache_root and cache_root ~= "" then
+		local cache_opts = nil
+		if not (opts and opts.cache_log) then
+			cache_opts = { silent = true }
+		end
+		cached, _, cache_file = try_load_cache(cache_root, makefile_path, Content, cache_opts)
+	end
+	if cached and type(cached.vars) == "table" then
+		return cached.vars
+	end
+	local vars = parse_variables_raw(Content)
+	if cached and cache_file then
+		write_cache(cache_file, {
+			sections = cached.sections,
+			vars = vars,
+			links = cached.links,
+		}, makefile_path, Content)
+	end
+	return vars
+end
+
+---@param Content string|nil
+---@return table[] groups, string[] individuals
+function Parser.ParseLinkOptions(Content, opts)
+	if opts and opts.skip_cache then
+		return parse_links_block(Content)
+	end
+	local cache_root, makefile_path = resolve_cache_paths(opts)
+	local cached = nil
+	local cache_file = nil
+	if cache_root and cache_root ~= "" then
+		local cache_opts = nil
+		if not (opts and opts.cache_log) then
+			cache_opts = { silent = true }
+		end
+		cached, _, cache_file = try_load_cache(cache_root, makefile_path, Content, cache_opts)
+	end
+	if cached and cached.links and cached.links.options then
+		local options = cached.links.options
+		return options.groups or {}, options.individuals or {}
+	end
+	local groups, individuals = parse_links_block(Content)
+	if cached and cache_file then
+		local links = cached.links or {}
+		links.options = { groups = groups, individuals = individuals }
+		write_cache(cache_file, {
+			sections = cached.sections,
+			vars = cached.vars,
+			links = links,
+		}, makefile_path, Content)
+	end
+	return groups, individuals
+end
+
+---@param Content string|nil
+---@param RelativePath string
+---@param opts table|string|nil
+---@return string[]|nil
+function Parser.GetCachedTargetLinks(Content, RelativePath, opts)
+	local cache_root, makefile_path = resolve_cache_paths(opts)
+	local cached = nil
+	if cache_root and cache_root ~= "" then
+		local cache_opts = nil
+		if not (opts and opts.cache_log) then
+			cache_opts = { silent = true }
+		end
+		cached = (select(1, try_load_cache(cache_root, makefile_path, Content, cache_opts)))
+	end
+	if cached and cached.links and cached.links.targets then
+		local entry = cached.links.targets[RelativePath]
+		if entry and type(entry.flags) == "table" then
+			return entry.flags
 		end
 	end
-
-	return Variables
+	return nil
 end
 
 ---@class MarkerInfo
@@ -200,7 +536,6 @@ end
 function Parser.FindMarker(Content, RelativePath, CheckStart, CheckEnd)
 	local info = { M_start = nil, M_end = nil, type = nil }
 	local escapedPath = Utils.EscapePattern(RelativePath)
-	local lineNumber = 0
 	if not CheckStart then
 		info.M_start = -1
 	end
@@ -211,8 +546,9 @@ function Parser.FindMarker(Content, RelativePath, CheckStart, CheckEnd)
 	if info.M_start == -1 and info.M_end == -1 then
 		return info
 	end
-	for line in Content:gmatch("([^\n]*)\n?") do
-		lineNumber = lineNumber + 1
+
+	local lines = normalize_lines(Content)
+	for lineNumber, line in ipairs(lines) do
 		local trimmedLine = line:match("^%s*(.-)%s*$")
 		if not trimmedLine:match("^%s*#") or trimmedLine == "" then
 			goto continue
@@ -253,12 +589,11 @@ end
 function Parser.FindAllMarkerPairs(Content)
 	local allPairs = {}
 	local openMarkers = {}
-	local lineNumber = 0
-	if not Content then
+	local lines = normalize_lines(Content)
+	if #lines == 0 then
 		return allPairs
 	end
-	for line in Content:gmatch("([^\n]*)\n?") do
-		lineNumber = lineNumber + 1
+	for lineNumber, line in ipairs(lines) do
 		local trimmedLine = line:match("^%s*(.-)%s*$")
 		if trimmedLine:match("^%s*#") then
 			local startMatch = trimmedLine:match("^%s*#%s*marker_start%s*:%s*(.*)$")
@@ -293,18 +628,8 @@ end
 ---@return string|string[]
 function Parser.ReadContentBetweenLines(Content, StartLine, EndLine, ReturnTable)
 	ReturnTable = not not ReturnTable
-	local contentLines = {}
-	local currentLineNumber = 0
-	for line in Content:gmatch("([^\n]*)\n?") do
-		currentLineNumber = currentLineNumber + 1
-		if currentLineNumber > StartLine and currentLineNumber < EndLine then
-			table.insert(contentLines, line)
-		end
-	end
-	if ReturnTable then
-		return contentLines
-	end
-	return table.concat(contentLines, "\n")
+	local lines = normalize_lines(Content)
+	return slice_lines(lines, StartLine, EndLine, ReturnTable)
 end
 
 ---@param Content string
@@ -313,24 +638,14 @@ end
 ---@return string|string[]
 function Parser.ReadContentBetweenMarkers(Content, RelativePath, ReturnTable)
 	ReturnTable = not not ReturnTable
-	local contentLines = {}
-	local currentLineNumber = 0
-	local markerInfo = Parser.FindMarker(Content, RelativePath, true, true)
+	local lines = normalize_lines(Content)
+	local markerInfo = Parser.FindMarker(lines, RelativePath, true, true)
 	local StartLine = markerInfo.M_start
 	local EndLine = markerInfo.M_end
 	if StartLine == -1 or EndLine == -1 then
 		return ""
 	end
-	for line in Content:gmatch("([^\n]*)\n?") do
-		currentLineNumber = currentLineNumber + 1
-		if currentLineNumber > StartLine and currentLineNumber < EndLine then
-			table.insert(contentLines, line)
-		end
-	end
-	if ReturnTable then
-		return contentLines
-	end
-	return table.concat(contentLines, "\n")
+	return slice_lines(lines, StartLine, EndLine, ReturnTable)
 end
 
 ---@param Content string|nil
@@ -366,6 +681,7 @@ end
 ---@return string|nil
 function Parser.FindExecutableTargetName(sectionContent, baseName)
 	local fallback = nil
+	local escapedBase = baseName and Utils.EscapePattern(baseName) or nil
 	for line in sectionContent:gmatch("[^\n]+") do
 		local trimmedLine = line:match("^%s*(.-)%s*$")
 		if trimmedLine == "" or trimmedLine:match("^#") then
@@ -374,19 +690,12 @@ function Parser.FindExecutableTargetName(sectionContent, baseName)
 		if is_links_assignment_line(trimmedLine) then
 			goto continue
 		end
-		if trimmedLine:match("^%s*[^:]+%s*:%s*LINKS%s*[%+:%?]?=") then
-			goto continue
-		end
-		if trimmedLine:match("^%s*[^:]+%s*:%s*LINKS%s*[%+:%?]?=") then
-			goto continue
-		end
 
 		local targetName = trimmedLine:match("^([^:]+):")
 		if targetName then
 			targetName = targetName:match("^%s*(.-)%s*$")
 			if not targetName:match("%.o%s*$") and not targetName:match("^run") then
-				if baseName then
-					local escapedBase = Utils.EscapePattern(baseName)
+				if escapedBase then
 					if
 						targetName == baseName
 						or targetName:match("/" .. escapedBase .. "$")
@@ -452,12 +761,12 @@ function Parser.ParseTarget(sectionContent, targetName)
 		table.insert(lines, line)
 	end
 
+	local targetPattern = "^" .. Utils.EscapePattern(targetName) .. "%s*:"
 	local i = 1
 	while i <= #lines do
 		local line = lines[i]
 		local trimmedLine = line:match("^%s*(.-)%s*$")
 
-		local targetPattern = "^" .. Utils.EscapePattern(targetName) .. "%s*:"
 		if trimmedLine:match(targetPattern) then
 			if is_links_assignment_line(trimmedLine) then
 				goto continue
@@ -496,6 +805,7 @@ function Parser.DetectTargetTypes(sectionContent, baseName, annotatedType)
 	local hasRun = false
 
 	local searchFor = search_flags_for(annotatedType)
+	local escapedBase = baseName and Utils.EscapePattern(baseName) or nil
 
 	for line in sectionContent:gmatch("[^\n]+") do
 		local trimmedLine = line:match("^%s*(.-)%s*$")
@@ -518,21 +828,15 @@ function Parser.DetectTargetTypes(sectionContent, baseName, annotatedType)
 			end
 
 			if searchFor.executable and not hasExecutable then
-				if
-					baseName
-					and (targetName == baseName or targetName:match("/" .. Utils.EscapePattern(baseName) .. "$"))
-				then
+				if escapedBase and (targetName == baseName or targetName:match("/" .. escapedBase .. "$")) then
 					hasExecutable = true
 				end
 			end
 
 			if searchFor.run and not hasRun then
 				if
-					baseName
-					and (
-						targetName == "run" .. baseName
-						or targetName:match("/run" .. Utils.EscapePattern(baseName) .. "$")
-					)
+					escapedBase
+					and (targetName == "run" .. baseName or targetName:match("/run" .. escapedBase .. "$"))
 				then
 					hasRun = true
 				end
@@ -725,42 +1029,22 @@ end
 ---@param opts table|nil
 ---@return { path: string, baseName: string|nil, startLine: integer, endLine: integer, analysis: SectionAnalysis }[]
 function Parser.AnalyzeAllSections(Content, opts)
-	local root_path = nil
-	local makefile_path = nil
-	if type(opts) == "table" then
-		root_path = opts.root_path or opts.root or opts.project_root
-		makefile_path = opts.makefile_path or opts.makefile or opts.makefilePath
-	elseif type(opts) == "string" then
-		root_path = opts
-	end
-	makefile_path = makefile_path or Parser.CacheMakefilePath
-	root_path = root_path or Parser.CacheRoot or vim.fn.getcwd()
-	if (not makefile_path or makefile_path == "") and root_path and root_path ~= "" then
-		local candidate = root_path .. "/Makefile"
-		if vim.loop.fs_stat(candidate) then
-			makefile_path = candidate
-		end
-	end
-
-	local cache_root = root_path
-	if makefile_path and makefile_path ~= "" then
-		cache_root = vim.fn.fnamemodify(makefile_path, ":h")
-	end
-
+	local cache_root, makefile_path = resolve_cache_paths(opts)
 	local cached, _, cache_file = try_load_cache(cache_root, makefile_path, Content)
-	if cached then
-		return cached
+	if cached and type(cached.sections) == "table" then
+		return cached.sections
 	end
 	log_cache("MakeNvim cache miss (rebuild)")
 
-	local allPairs = Parser.FindAllMarkerPairs(Content)
+	local lines = normalize_lines(Content)
+	local allPairs = Parser.FindAllMarkerPairs(lines)
 	local sectionAnalysis = {}
+	local target_links = {}
+	local vars = parse_variables_raw(Content or "")
+	local groups, individuals = parse_links_block(Content or "")
 
 	for _, pair in ipairs(allPairs) do
-		local sectionContent = Parser.ReadContentBetweenMarkers(Content, pair.path)
-		if type(sectionContent) == "table" then
-			sectionContent = table.concat(sectionContent, "\n")
-		end
+		local sectionContent = slice_lines(lines, pair.StartLine, pair.EndLine, false)
 
 		local baseName = pair.path:match("([^/]+)%.cpp$")
 		if baseName then
@@ -768,6 +1052,13 @@ function Parser.AnalyzeAllSections(Content, opts)
 		end
 
 		local analysis = Parser.AnalyzeSection(sectionContent, baseName, pair.annotatedType)
+		local target_name = Parser.FindExecutableTargetName(sectionContent, baseName)
+		if target_name then
+			target_links[pair.path] = {
+				target = target_name,
+				flags = Parser.GetLinksForTarget(sectionContent, target_name),
+			}
+		end
 
 		if analysis.valid then
 			table.insert(sectionAnalysis, {
@@ -782,7 +1073,14 @@ function Parser.AnalyzeAllSections(Content, opts)
 		end
 	end
 
-	write_cache(cache_file, sectionAnalysis, makefile_path, Content)
+	write_cache(cache_file, {
+		sections = sectionAnalysis,
+		vars = vars,
+		links = {
+			options = { groups = groups, individuals = individuals },
+			targets = target_links,
+		},
+	}, makefile_path, Content)
 	return sectionAnalysis
 end
 
@@ -805,16 +1103,14 @@ end
 ---@param Content string
 function Parser.PrintAnalysisSummary(Content)
 	local allSections = Parser.AnalyzeAllSections(Content)
+	local lines = normalize_lines(Content)
 
 	vim.notify("Makefile Section Analysis:")
 	vim.notify("=" .. string.rep("=", 50))
 
 	for _, section in ipairs(allSections) do
 		local analysis = section.analysis
-		local sectionContent = Parser.ReadContentBetweenMarkers(Content, section.path)
-		if type(sectionContent) == "table" then
-			sectionContent = table.concat(sectionContent, "\n")
-		end
+		local sectionContent = slice_lines(lines, section.startLine, section.endLine, false)
 		local exeTargetName = Parser.FindExecutableTargetName(sectionContent, section.baseName)
 		local exeLinks = {}
 		if exeTargetName then

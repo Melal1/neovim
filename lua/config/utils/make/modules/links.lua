@@ -55,78 +55,6 @@ local function merge_link_flags(existing, incoming, action)
 	return current
 end
 
-local function parse_links_block(content)
-	local groups = {}
-	local group_map = {}
-	local individuals = {}
-	local individual_map = {}
-
-	if not content or content == "" then
-		return groups, individuals
-	end
-
-	local in_block = false
-	for _, line in ipairs(vim.split(content, "\n", { plain = true })) do
-		if line:match("^%s*#%s*links_start") then
-			in_block = true
-			goto continue
-		end
-		if line:match("^%s*#%s*links_end") then
-			break
-		end
-		if not in_block then
-			goto continue
-		end
-
-		local group_name, rest = line:match("^%s*#%s*group:%s*(%S+)%s*(.*)$")
-		if group_name then
-			local flags = {}
-			for flag in (rest or ""):gmatch("%S+") do
-				table.insert(flags, flag)
-			end
-			flags = normalize_link_flags(flags)
-			if #flags > 0 then
-				local group = group_map[group_name]
-				if not group then
-					group = { name = group_name, flags = {} }
-					group_map[group_name] = group
-					table.insert(groups, group)
-				end
-				group.flags = normalize_link_flags(vim.list_extend(group.flags, flags))
-			end
-			goto continue
-		end
-
-		local link_rest = line:match("^%s*#%s*link:%s*(.*)$")
-		if link_rest then
-			for flag in link_rest:gmatch("%S+") do
-				if not individual_map[flag] then
-					individual_map[flag] = true
-					table.insert(individuals, flag)
-				end
-			end
-		end
-
-		::continue::
-	end
-
-	local group_flag_map = {}
-	for _, group in ipairs(groups) do
-		for _, flag in ipairs(group.flags) do
-			group_flag_map[flag] = true
-		end
-	end
-
-	local filtered_individuals = {}
-	for _, flag in ipairs(individuals) do
-		if not group_flag_map[flag] then
-			table.insert(filtered_individuals, flag)
-		end
-	end
-
-	return groups, filtered_individuals
-end
-
 local function build_links_block(groups, individuals)
 	local lines = { "# links_start" }
 
@@ -196,7 +124,7 @@ local function apply_links_block(content, groups, individuals)
 end
 
 local function build_link_entries(makefile_content)
-	local groups, individuals = parse_links_block(makefile_content)
+	local groups, individuals = Parser.ParseLinkOptions(makefile_content)
 	local entries = {}
 	local flags_by_value = {}
 	local all_flags = {}
@@ -716,11 +644,11 @@ local function manage_link_options_edit(picker, makefile_path, makefile_content)
 end
 
 function M.ParseLinksBlock(content)
-	return parse_links_block(content)
+	return Parser.ParseLinkOptions(content)
 end
 
 function M.HasLinkOptions(content)
-	local groups, individuals = parse_links_block(content or "")
+	local groups, individuals = Parser.ParseLinkOptions(content or "")
 	return #groups > 0 or #individuals > 0
 end
 
@@ -730,7 +658,7 @@ function M.LoadLinkOptions(makefile_path, fallback_content)
 		content, _ = Utils.ReadFile(makefile_path)
 	end
 	content = content or ""
-	local groups, individuals = parse_links_block(content)
+	local groups, individuals = Parser.ParseLinkOptions(content)
 	return content, groups, individuals
 end
 
@@ -788,6 +716,10 @@ function M.SelectLinks(existing_flags, makefile_content, callback, opts)
 end
 
 function M.GetExistingLinks(content, relative_path, base_name)
+	local cached = Parser.GetCachedTargetLinks(content, relative_path)
+	if cached then
+		return cached
+	end
 	local section_content = Parser.ReadContentBetweenMarkers(content, relative_path)
 	if type(section_content) == "table" then
 		section_content = table.concat(section_content, "\n")
