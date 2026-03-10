@@ -3,28 +3,24 @@ return {
 	{
 		dir = "~/Dev/projects/lua/make.nvim",
 		name = "make.nvim",
-    enabled = true;
+		enabled = true,
 		dependencies = {
 			"nvim-telescope/telescope.nvim",
 		},
 		ft = { "cpp" },
+		keys = {
+			{ "<leader>rf", "<cmd>Make run<CR>" ,desc = "Run the current file with make ( make.nvim )"},
+		},
+		---@type make.Options
 		opts = {
 			SourceExtensions = { ".cpp", ".c", ".cc", ".cxx" },
 			RootMarkers = { ".git", "src", "include", "build", "Makefile" },
 			MaxSearchLevels = 5,
 			CacheUseHash = true,
 			CacheFormat = "luabytecode", -- or "mpack"
-			CacheDir = ".cache/make.nvim",
-			CacheLog = true,
+			CacheDir = ".cache/make.nviM",
+			CacheLog = false,
 			EnableBackup = false,
-			MakefileVars = {
-				CXX = "g++",
-				DEBUGFLAGS = "-std=c++17 -g -O0",
-				RELEASEFLAGS = "-std=c++17 -O3 -DNDEBUG",
-				CXXFLAGS = "$(DEBUGFLAGS)",
-				BUILD_MODE = "debug",
-				BUILD_DIR = "build",
-			},
 		},
 	},
 
@@ -74,8 +70,10 @@ return {
       {"<leader>dt", function()
         require("dap").terminate()
         _G.DAP_IS_ACTIVE = false
-        vim.cmd("DapVirtualTextToggle")
-        vim.cmd("DapVirtualTextToggle")
+        require("nvim-dap-virtual-text").disable()
+        pcall(function()
+          require("config.statusline").refresh_winbar()
+        end)
       end, desc = "Terminate"},
       { "<leader>dw", function() require("dap.ui.widgets").hover() end, desc = "Widgets" },
     },
@@ -148,19 +146,31 @@ return {
 
 			dap.listeners.before.attach.st = function()
 				_G.DAP_IS_ACTIVE = true
+				require("nvim-dap-virtual-text").enable()
+				pcall(function()
+					require("config.statusline").refresh_winbar()
+				end)
 			end
 			dap.listeners.before.launch.st = function()
 				_G.DAP_IS_ACTIVE = true
+				require("nvim-dap-virtual-text").enable()
+				pcall(function()
+					require("config.statusline").refresh_winbar()
+				end)
 			end
 			dap.listeners.before.event_terminated.st = function()
 				_G.DAP_IS_ACTIVE = false
+				require("nvim-dap-virtual-text").disable()
+				pcall(function()
+					require("config.statusline").refresh_winbar()
+				end)
 			end
-			vim.cmd("DapVirtualTextToggle")
-			vim.cmd("DapVirtualTextToggle")
 			dap.listeners.before.event_exited.st = function()
 				_G.DAP_IS_ACTIVE = false
-				vim.cmd("DapVirtualTextToggle")
-				vim.cmd("DapVirtualTextToggle")
+				require("nvim-dap-virtual-text").disable()
+				pcall(function()
+					require("config.statusline").refresh_winbar()
+				end)
 			end
 		end,
 	},
@@ -238,7 +248,7 @@ return {
 			{"<leader>fo", function() require("telescope.builtin").oldfiles() end, desc = "Old Files",},
 			{"<leader>OO", function() require("telescope.builtin").lsp_document_symbols() end, desc = "LSP Document Symbols",},
 			{"<leader>fdia", function() require("telescope.builtin").diagnostics() end, desc = "Diagnostics",},
-      {"<leader>frf",function () require("telescope.builtin").lsps_references() end, desc = "LSP References",},
+			{"<leader>frf",function () require("telescope.builtin").lsp_references() end, desc = "LSP References",},
 		},
 
 		dependencies = {
@@ -371,7 +381,7 @@ return {
 	{
 		cmd = "Spectre",
 		"nvim-pack/nvim-spectre",
-		dependecies = {
+		dependencies = {
 			"nvim-lua/plenary.nvim",
 		},
 	},
@@ -469,25 +479,7 @@ return {
 	--Diagnostics: Trouble
 	{
 		"folke/trouble.nvim",
-		opts = {
-			modes = {
-				project_dia = {
-					mode = "diagnostics", -- inherit from diagnostics mode
-					filter = {
-						any = {
-							buf = 1, -- current buffer
-							{
-								severity = vim.diagnostic.severity.ERROR, -- errors only
-								-- limit to files in the current project
-								function(item)
-									return item.filename:find((vim.loop or vim.uv).cwd(), 1, true)
-								end,
-							},
-						},
-					},
-				},
-			},
-		},
+		opts = {},
 		cmd = "Trouble",
 		keys = {
 			{
@@ -501,17 +493,12 @@ return {
 				desc = "Buffer Diagnostics (Trouble)",
 			},
 			{
-				"<leader>xp",
-				"<cmd>Trouble project_dia<CR>",
-				desc = "Project Diagonstics ( Trouble )",
-			},
-			{
-				"<leader>cs",
+				"<leader>xs",
 				"<cmd>Trouble symbols toggle focus=false<cr>",
 				desc = "Symbols (Trouble)",
 			},
 			{
-				"<leader>cl",
+				"<leader>xl",
 				"<cmd>Trouble lsp toggle focus=false win.position=right<cr>",
 				desc = "LSP Definitions / references / ... (Trouble)",
 			},
@@ -521,7 +508,7 @@ return {
 				desc = "Location List (Trouble)",
 			},
 			{
-				"<leader>xQ",
+				"<leader>xq",
 				"<cmd>Trouble qflist toggle<cr>",
 				desc = "Quickfix List (Trouble)",
 			},
@@ -722,6 +709,17 @@ return {
 					TemplateTemplateParm = "",
 					TemplateParamObject = "",
 				},
+			},
+		},
+	},
+	{
+		"folke/lazydev.nvim",
+		ft = "lua", -- only load on lua files
+		opts = {
+			library = {
+				-- See the configuration section for more details
+				-- Load luvit types when the `vim.uv` word is found
+				{ path = "${3rd}/luv/library", words = { "vim%.uv" } },
 			},
 		},
 	},

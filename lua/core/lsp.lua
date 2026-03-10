@@ -28,6 +28,7 @@ vim.api.nvim_create_autocmd("LspAttach", {
 vim.opt.winborder = "rounded"
 vim.diagnostic.config({
 	virtual_lines = false,
+	virtual_text = false,
 	underline = true,
 	update_in_insert = false,
 	severity_sort = true,
@@ -78,7 +79,7 @@ vim.keymap.set("n", "td", function()
 end, { desc = "Toggle diagnostics" })
 
 vim.keymap.set("n", "<leader>ga", function()
-	local clients = vim.lsp.get_active_clients()
+	local clients = vim.lsp.get_clients()
 	for _, c in ipairs(clients) do
 		vim.notify(vim.inspect(c.name))
 	end

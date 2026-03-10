@@ -1,19 +1,8 @@
 {
-  "main": {
-    "prefix": "snm",
-    "body": [
-      "#include <iostream>",
-      "",
-      "int main() {",
-      "\t${1:// Your code here}",
-      "\treturn 0;",
-      "}"
-    ]
-  },
   "mainc": {
     "prefix": "cnm",
     "body": [
-      "#include <iostream>",
+      "#include <bits/stdc++.h",
       "using namespace std;",
       "",
       "int main() {",
@@ -26,30 +15,14 @@
       "}"
     ]
   },
-  "Exc": {
-    "prefix": "Exc",
+  "section": {
+    "prefix": "section",
     "body": [
-      "// ------- ${1:num} -------",
+      "// -------| Section  ${1:name} |-------",
       "",
-      "${2:// Code}",
-      "",
+      "${2}",
       "",
       "//----------------------"
-    ]
-  },
-  "ustd": {
-    "prefix": "ustd",
-    "body": [
-      "using namespace std;"
-    ]
-  },
-  "if": {
-    "prefix": "if",
-    "body": [
-      "if(${1://exp})",
-      "{",
-      "${2://body}",
-      "}"
     ]
   }
 }

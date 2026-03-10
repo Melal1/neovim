@@ -220,10 +220,11 @@ return {
 										},
 									}
 									if ctx.label_detail then
-										table.insert(
-											highlights,
-											{ #ctx.label, #ctx.label + #ctx.label_detail, group = "BlinkCmpLabelDetail" }
-										)
+										table.insert(highlights, {
+											#ctx.label,
+											#ctx.label + #ctx.label_detail,
+											group = "BlinkCmpLabelDetail",
+										})
 									end
 
 									-- characters matched on the label by the fuzzy matcher
@@ -249,14 +250,22 @@ return {
 			},
 
 			sources = {
-				default = { "snippets", "lsp", "path", "buffer", "copilot" },
+				default = { "lazydev", "snippets", "lsp", "path", "buffer", "copilot" },
 
 				providers = {
 					copilot = {
 						name = "copilot",
 						module = "blink-copilot",
-						score_offset = 100,
+						score_offset = 8,
 						async = true,
+					},
+					lazydev = {
+						name = "LazyDev",
+						module = "lazydev.integrations.blink",
+						score_offset = 100,
+					},
+					buffer = {
+						score_offset = 7,
 					},
 					lsp = {
 						score_offset = 9,
@@ -282,15 +291,14 @@ return {
 
 		"nvim-treesitter/nvim-treesitter",
 		dependencies = {
-			"nvim-treesitter/nvim-treesitter-textobjects",
-			branch = "main",
+			{ "nvim-treesitter/nvim-treesitter-textobjects", branch = "main" },
 		},
 		branch = "main",
 		event = { "BufRead", "BufNew" },
 		build = ":TSUpdate",
 		config = function()
 			local ts = require("nvim-treesitter")
-			ts.install({ "pyhton", "cpp", "bash", "lua", "rust", "make" })
+			ts.install({ "python", "cpp", "bash", "lua", "rust", "make" })
 			vim.api.nvim_create_autocmd("FileType", {
 				callback = function(details)
 					vim.defer_fn(function()

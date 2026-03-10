@@ -33,6 +33,14 @@ vim.opt.undofile = true -- persistent undo history
 vim.opt.updatetime = 50 -- faster cursorhold events
 vim.opt.nu = true
 vim.o.shada = "'100,<50,s10,h"
+vim.opt.backup = false
+vim.opt.writebackup = false
+vim.opt.swapfile = false
+vim.opt.autoread = true
+vim.opt.autowrite = false
+vim.opt.selection = "inclusive"
+vim.opt.redrawtime = 10000
+vim.opt.maxmempattern = 20000
 
 -- ========================================
 -- visual settings
@@ -43,6 +51,7 @@ vim.opt.wrap = false
 vim.opt.hlsearch = false
 vim.opt.incsearch = true
 vim.opt.guicursor = ""
+vim.opt.cmdheight = 1
 vim.cmd("autocmd BufEnter * set formatoptions-=cro")
 vim.cmd("autocmd BufEnter * setlocal formatoptions-=cro")
 vim.api.nvim_create_autocmd({ "InsertLeave", "WinEnter" }, {

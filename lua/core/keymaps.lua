@@ -91,7 +91,7 @@ map("n", "<leader>h", "<cmd>noh<CR>", { desc = "Clear search highlight" })
 map("n", "x", '"_x', { desc = "Delete character without yanking" })
 map("n", "dd", '"_dd', { desc = "Delete line without yanking" })
 map("v", "d", '"_d', { desc = "Delete selection without yanking" })
-vim.api.nvim_set_keymap("n", "d", '"_d', { noremap = true, silent = true, desc = "Delete without yanking" })
+map("n", "d", '"_d', { silent = true, desc = "Delete without yanking" })
 
 -- Paste without overwriting default register in visual mode
 map("x", "<leader>p", [["_dP]], { desc = "Paste without overwriting default register" })
@@ -111,7 +111,7 @@ map("n", "<leader>Cd", "<cmd>cd %:p:h<CR>", { desc = "Set Global working directo
 map("n", "n", "nzzzv", { desc = "Next search result and center" })
 map("n", "N", "Nzzzv", { desc = "Previous search result and center" })
 
-map("n", "<leader>pv", vim.cmd.Ex, { desc = "Open file explorer" })
+map("n", "<leader>pv", "<cmd>Oil<CR>", { desc = "Open file explorer" })
 
 map("n", "<leader>x", "<cmd>!chmod +x %<CR>", { silent = true, desc = "Make current file executable" })
 

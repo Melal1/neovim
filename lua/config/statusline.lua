@@ -1,5 +1,9 @@
 local M = {}
 
+-- I tried to make this peforment as much as I could
+
+M._navic = nil
+
 -- Highlighting ----------------------------------------------------------------
 vim.cmd("hi statusline guibg=NONE")
 vim.cmd("hi StatuslineTerm guibg=NONE")
@@ -80,7 +84,7 @@ local function hl_str(hl_name, text)
 end
 
 -- Window truncation detection --------------------------------------------------
-local trunc100 = true
+M._trunc100 = true
 local function is_truncated(width)
 	local w = (vim.o.laststatus == 3) and vim.o.columns or vim.api.nvim_win_get_width(0)
 	return w < width
@@ -99,13 +103,13 @@ function M.git_component()
 	if not head or head == "" then
 		return ""
 	end
-	return hl_str("GitBranch", trunc100 and "   " or ("  " .. head .. " "))
+	return hl_str("GitBranch", M._trunc100 and "   " or ("  " .. head .. " "))
 end
 
 -- LINE / COLUMN ----------------------------------------------------------------
 local function line_col()
 	local row, col = unpack(vim.api.nvim_win_get_cursor(0))
-	if trunc100 then
+	if M._trunc100 then
 		return hl_str("StatusLineFileName", string.format(" %d:%d ", row, col + 1))
 	end
 	return hl_str("StatusLineFileName", string.format(" Ln%d, Col%d ", row, col + 1))
@@ -114,13 +118,16 @@ end
 -- VARIABLES UPDATED BY AUTOCOMMANDS -------------------------------------------
 local copilot = ""
 local file_icon = ""
+local file_name = ""
+local cwd_tail = ""
 local diag_enabled = false
 
 math.randomseed(os.time())
 local funny = { "Creative", "EasyMode", "Spectator", "Redstone", "!Xp", " " }
+local shell_name = (vim.env.SHELL and vim.fn.fnamemodify(vim.env.SHELL, ":t")) or "shell"
 
--- AUTOCOMMAND: LSP attach/detach + BufEnter -----------------------------------
-vim.api.nvim_create_autocmd({ "LspAttach", "LspDetach", "BufEnter" }, {
+-- AUTOCOMMAND: LSP attach/detach ----------------------------------------------
+vim.api.nvim_create_autocmd({ "LspAttach", "LspDetach" }, {
 	callback = function(args)
 		local buf = args.buf
 		local client = args.data and args.data.client_id and vim.lsp.get_client_by_id(args.data.client_id)
@@ -134,16 +141,92 @@ vim.api.nvim_create_autocmd({ "LspAttach", "LspDetach", "BufEnter" }, {
 			end
 		end
 
-		-- File icon update
-		local ft = vim.bo[buf].filetype
-		file_icon = WebDevIcons.get_icon_by_filetype(ft)
-		if not file_icon then
-			file_icon = ""
-		end
-
 		-- Diagnostics enabled if at least one LSP is attached
 		local clients = vim.lsp.get_clients({ bufnr = buf })
 		diag_enabled = (#clients > 0 and copilot == "") or (#clients > 1)
+
+		-- Cache navic module once on LSP attach
+		if args.event == "LspAttach" and not M._navic then
+			local ok, navic = pcall(require, "nvim-navic")
+			if ok then
+				M._navic = navic
+			end
+		end
+	end,
+})
+
+-- AUTOCOMMAND: BufEnter --------------------------------------------------------
+local function update_file_info(buf)
+	local name = vim.api.nvim_buf_get_name(buf)
+	if name == "" then
+		file_name = "[No Name]"
+	else
+		file_name = vim.fs.basename(name)
+	end
+
+	local ft = vim.bo[buf].filetype
+	file_icon = WebDevIcons.get_icon_by_filetype(ft) or ""
+end
+
+local function update_cwd()
+	local cwd = (vim.uv and vim.uv.cwd()) or vim.fn.getcwd()
+	if not cwd or cwd == "" then
+		cwd_tail = ""
+		return
+	end
+	cwd_tail = vim.fs.basename(cwd)
+end
+
+vim.api.nvim_create_autocmd({ "VimEnter", "DirChanged" }, {
+	callback = function()
+		update_cwd()
+	end,
+})
+
+update_cwd()
+
+vim.api.nvim_create_autocmd({ "BufEnter", "BufFilePost" }, {
+	callback = function(args)
+		local buf = args.buf
+
+		update_file_info(buf)
+
+		-- Diagnostics enabled if at least one LSP is attached , it's added here so diags disappear when in oil,telescope ....etc
+		local clients = vim.lsp.get_clients({ bufnr = buf })
+		diag_enabled = (#clients > 0 and copilot == "") or (#clients > 1)
+	end,
+})
+
+local function update_diag_counts(bufnr)
+	if not bufnr or bufnr == 0 then
+		bufnr = vim.api.nvim_get_current_buf()
+	end
+	local counts = { E = 0, W = 0, H = 0, I = 0 }
+	if vim.diagnostic.count then
+		local c = vim.diagnostic.count(bufnr)
+		counts.E = c[vim.diagnostic.severity.ERROR] or 0
+		counts.W = c[vim.diagnostic.severity.WARN] or 0
+		counts.H = c[vim.diagnostic.severity.HINT] or 0
+		counts.I = c[vim.diagnostic.severity.INFO] or 0
+	else
+		for _, d in ipairs(vim.diagnostic.get(bufnr)) do
+			if d.severity == vim.diagnostic.severity.ERROR then
+				counts.E = counts.E + 1
+			elseif d.severity == vim.diagnostic.severity.WARN then
+				counts.W = counts.W + 1
+			elseif d.severity == vim.diagnostic.severity.HINT then
+				counts.H = counts.H + 1
+			elseif d.severity == vim.diagnostic.severity.INFO then
+				counts.I = counts.I + 1
+			end
+		end
+	end
+	vim.b[bufnr].statusline_diag_counts = counts
+end
+
+vim.api.nvim_create_autocmd({ "DiagnosticChanged", "BufEnter" }, {
+	callback = function(args)
+		update_diag_counts(args.buf)
 	end,
 })
 
@@ -152,17 +235,13 @@ function M.diagnostics_component()
 	if not diag_enabled then
 		return ""
 	end
-	local counts = { E = 0, W = 0, H = 0, I = 0 }
-	for _, d in ipairs(vim.diagnostic.get(0)) do
-		if d.severity == vim.diagnostic.severity.ERROR then
-			counts.E = counts.E + 1
-		elseif d.severity == vim.diagnostic.severity.WARN then
-			counts.W = counts.W + 1
-		elseif d.severity == vim.diagnostic.severity.HINT then
-			counts.H = counts.H + 1
-		elseif d.severity == vim.diagnostic.severity.INFO then
-			counts.I = counts.I + 1
-		end
+	local counts = vim.b.statusline_diag_counts
+	if not counts then
+		update_diag_counts(0)
+		counts = vim.b.statusline_diag_counts
+	end
+	if not counts then
+		return ""
 	end
 	local parts = {}
 	if counts.E > 0 then
@@ -194,9 +273,9 @@ function M.dap_component()
 
 	local dap = require("dap")
 
-	local name = vim.fn.expand("%:t")
+	local name = file_name ~= "" and file_name or "[No Name]"
 
-	if trunc100 then
+	if M._trunc100 then
 		return string.format(
 			"%%#DapIcon#Debugging:%%#Normal# %%#CopilotStatus#%s%%#Normal# %%#DapIcon# %%#Normal#",
 			name
@@ -228,66 +307,85 @@ end
 
 -- CURRENT WORKING DIRECTORY ----------------------------------------------------
 M.cwd = function()
-	if vim.o.columns > 85 then
-		return "%#ModeCom#  " .. vim.fn.fnamemodify(vim.fn.getcwd(), ":t") .. " "
+	if vim.o.columns > 85 and cwd_tail ~= "" then
+		return "%#ModeCom#  " .. cwd_tail .. " "
 	end
 	return ""
 end
 
--- BREADCRUMB TOGGLE ------------------------------------------------------------
+-- BREADCRUMB / WINBAR ----------------------------------------------------------
 local breadcrumb_on = true
-
-vim.api.nvim_create_user_command("Crumb", function(o)
-	if o.args == "on" then
-		breadcrumb_on = true
-		return
-	end
-	if o.args == "off" then
-		breadcrumb_on = false
-		return
-	end
-	vim.notify("Usage: Crumb on | off")
-end, { nargs = 1 })
-
--- RENDER -----------------------------------------------------------------------
-local breadcrumb = ""
 local ignore = {
 	["dap-view"] = true,
 	["dap-view-term"] = true,
 	["dap-view-help"] = true,
 }
-function M.render()
-	trunc100 = is_truncated(100)
-	local ft = vim.bo.filetype
 
-	if not ignore[ft] then
-		if breadcrumb_on and not _G.DAP_IS_ACTIVE then
-			local navic = require("nvim-navic")
-			breadcrumb = navic.get_location()
-			vim.o.winbar = ""
-		else
-			if _G.DAP_IS_ACTIVE then
-				vim.o.winbar = "%{%v:lua.require'nvim-navic'.get_location()%}"
-				breadcrumb = ""
-			end
+local function update_winbar(win, buf)
+	win = win or vim.api.nvim_get_current_win()
+	buf = buf or vim.api.nvim_win_get_buf(win)
+	local ft = vim.bo[buf].filetype
+	if ignore[ft] then
+		vim.wo[win].winbar = ""
+		return
+	end
+	if _G.DAP_IS_ACTIVE and breadcrumb_on then
+		local navic = M._navic
+		if navic and navic.is_available(buf) then
+			vim.wo[win].winbar = "%{%v:lua.require'nvim-navic'.get_location()%}"
+			return
 		end
 	end
+	vim.wo[win].winbar = ""
+end
 
+function M.refresh_winbar()
+	update_winbar()
+end
+
+vim.api.nvim_create_user_command("Crumb", function(o)
+	if o.args == "on" then
+		breadcrumb_on = true
+		update_winbar()
+		return
+	end
+	if o.args == "off" then
+		breadcrumb_on = false
+		update_winbar()
+		return
+	end
+	vim.notify("Usage: Crumb on | off")
+end, { nargs = 1 })
+
+vim.api.nvim_create_autocmd({ "WinEnter", "BufEnter", "WinResized", "LspAttach", "LspDetach" }, {
+	callback = function(args)
+		update_winbar(args.win, args.buf)
+	end,
+})
+
+-- RENDER -----------------------------------------------------------------------
+function M.render()
+	M._trunc100 = is_truncated(100)
+	local ft = vim.bo.filetype
+	local breadcrumb = ""
+	if not ignore[ft] then
+		local navic = M._navic
+		if navic and navic.is_available and navic.is_available(0) then
+			breadcrumb = navic.get_location()
+		end
+	end
 	return table.concat({
 		mode_component(),
 		" ",
 
 		(_G.DAP_IS_ACTIVE and "")
-			or (vim.bo.buftype == "terminal" and ("%#StatusLineFileName# " .. (vim.env.SHELL and vim.fn.fnamemodify(
-				vim.env.SHELL,
-				":t"
-			) or "shell")))
-			or ("%#StatusLineFileName#" .. (file_icon or "") .. " " .. vim.fn.expand("%:t")),
+			or (vim.bo.buftype == "terminal" and ("%#StatusLineFileName# " .. shell_name))
+			or ("%#StatusLineFileName#" .. (file_icon or "") .. " " .. (file_name ~= "" and file_name or "[No Name]")),
 
 		" ",
 		M.diagnostics_component(),
 		" ",
-		"%=", -- left/center/right separator
+		"%=",
 		M.dap_component(),
 		breadcrumb,
 		"%=",
