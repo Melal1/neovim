@@ -298,7 +298,7 @@ return {
 		build = ":TSUpdate",
 		config = function()
 			local ts = require("nvim-treesitter")
-			ts.install({ "python", "cpp", "bash", "lua", "rust", "make" })
+			ts.install({ "python", "cpp", "bash", "lua", "rust", "make", "java", "cmake" })
 			vim.api.nvim_create_autocmd("FileType", {
 				callback = function(details)
 					vim.defer_fn(function()

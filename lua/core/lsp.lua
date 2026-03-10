@@ -7,6 +7,7 @@ vim.lsp.enable({
 	"jsonls",
 	"qmlls",
   "clangd",
+  "jdtls"
 	-- "harper_ls",
 })
 
