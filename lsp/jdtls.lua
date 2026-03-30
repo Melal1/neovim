@@ -129,6 +129,7 @@ return {
 		"pom.xml", -- Maven
 		"settings.gradle", -- Gradle
 		"settings.gradle.kts", -- Gradle
+    "Makefile"
 	},
 	init_options = {
 		workspace = get_jdtls_workspace_dir(),

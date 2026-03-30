@@ -1,5 +1,19 @@
 math.randomseed(os.time())
 return {
+	{
+		"nvim-java/nvim-java",
+		ft = { "java" },
+		config = function()
+			require("java").setup({
+				jdk = {
+					auto_install = false,
+					version = "21",
+				},
+			})
+
+			vim.lsp.enable("jdtls")
+		end,
+	},
 	--Markdown
 	{
 		"MeanderingProgrammer/render-markdown.nvim",

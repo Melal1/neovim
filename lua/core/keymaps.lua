@@ -2,6 +2,7 @@ local map = vim.keymap.set
 
 map("n", "<C-q>", "<cmd>wqa!<CR>")
 map("n", "<leader><C-q>", "<cmd>qa!<CR>")
+map("n", "<leader>w","<cmd>w<CR>")
 
 -- map("i", "jk", "<ESC>", { desc = "Exit insert mode quickly" }) -- I am lefting this for caps lock :(
 

@@ -1,8 +1,9 @@
 return {
 	-- BuildSystem: make.nvim
 	{
-		dir = "~/Dev/projects/lua/make.nvim",
-		name = "make.nvim",
+		-- dir = "~/Dev/projects/lua/make.nvim",
+		-- name = "make.nvim",
+    "melal1/make.nvim",
 		enabled = true,
 		dependencies = {
 			"nvim-telescope/telescope.nvim",
@@ -227,7 +228,7 @@ return {
 				require("nvim-navbuddy").open()
 			end, { desc = "Open outline window ( NavBuddy )" })
 		end,
-		lazy = true,
+		                                          lazy = true,
 	},
 	--Telescope
 	{
