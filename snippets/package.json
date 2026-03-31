@@ -2,8 +2,18 @@
   "name": "personal-snippets",
   "contributes": {
     "snippets": [
-      { "language": "cpp", "path": "./cpp.json" },
-      { "language": "all", "path": "./all.json" }
+      {
+        "language": "cpp",
+        "path": "./cpp.json"
+      },
+      {
+        "language": "kotlin",
+        "path": "./kotlin.json"
+      },
+      {
+        "language": "all",
+        "path": "./all.json"
+      }
     ]
   }
 }
