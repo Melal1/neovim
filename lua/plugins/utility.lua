@@ -1,16 +1,15 @@
 return {
 	-- BuildSystem: make.nvim
 	{
-		-- dir = "~/Dev/projects/lua/make.nvim",
-		-- name = "make.nvim",
-    "melal1/make.nvim",
+		dir = "~/Dev/projects/lua/make.nvim",
+		name = "make.nvim",
 		enabled = true,
 		dependencies = {
 			"nvim-telescope/telescope.nvim",
 		},
 		ft = { "cpp" },
 		keys = {
-			{ "<leader>rf", "<cmd>Make run<CR>" ,desc = "Run the current file with make ( make.nvim )"},
+			{ "<leader>rf", "<cmd>Make run<CR>", desc = "Run the current file with make ( make.nvim )" },
 		},
 		---@type make.Options
 		opts = {
@@ -68,6 +67,9 @@ return {
       { "<leader>dP", function() require("dap").pause() end, desc = "Pause" },
       { "<leader>dr", function() require("dap").repl.toggle() end, desc = "Toggle REPL" },
       { "<leader>ds", function() require("dap").session() end, desc = "Session" },
+      { "<leader>dw", function() require("dap.ui.widgets").hover() end, desc = "Widgets" },
+      {"<leader>daw", "<cmd>DapViewWatch<CR>",  desc = "Add under cursor to watch list" },
+      {"<leader>dfr",function() local w = require('dap.ui.widgets'); w.sidebar(w.frames).open() end , desc = "Call stack"},
       {"<leader>dt", function()
         require("dap").terminate()
         _G.DAP_IS_ACTIVE = false
@@ -76,11 +78,9 @@ return {
           require("config.statusline").refresh_winbar()
         end)
       end, desc = "Terminate"},
-      { "<leader>dw", function() require("dap.ui.widgets").hover() end, desc = "Widgets" },
     },
 		config = function()
 			local dap = require("dap")
-			vim.keymap.set("n", "<leader>daw", "<cmd>DapViewWatch<CR>", { desc = "Add under cursor to watch list" })
 			require("nvim-dap-virtual-text").setup({
 				only_first_definition = false,
 			})
@@ -228,7 +228,7 @@ return {
 				require("nvim-navbuddy").open()
 			end, { desc = "Open outline window ( NavBuddy )" })
 		end,
-		                                          lazy = true,
+		lazy = true,
 	},
 	--Telescope
 	{
