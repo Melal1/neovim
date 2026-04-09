@@ -76,6 +76,7 @@ local function get_cmd()
 		"--header-insertion=iwyu",
 		"--completion-style=detailed",
 		"--function-arg-placeholders",
+    "--experimental-modules-support",
 	}
 	if is_tidy_enabled() then
 		table.insert(cmd, "--clang-tidy")
