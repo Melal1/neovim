@@ -44,6 +44,6 @@ vim.api.nvim_create_autocmd("InsertCharPre", {
 
 vim.keymap.set("n", "<leader>rf", function()
 	local term = require("config.utils.toggleTerm")
-  local cmd = "python" .. vim.fn.expand("%:p")
-  term.SingleShot(cmd)
-end)
+	local cmd = "python " .. vim.fn.expand("%:p")
+	term.SingleShot(cmd, _, true)
+end, { desc = "Run Curren python file" })
