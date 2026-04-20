@@ -8,9 +8,6 @@ return {
 			"nvim-telescope/telescope.nvim",
 		},
 		ft = { "cpp" },
-		keys = {
-			{ "<leader>rf", "<cmd>Make run<CR>", desc = "Run the current file with make ( make.nvim )" },
-		},
 		---@type make.Options
 		opts = {
 			SourceExtensions = { ".cpp", ".c", ".cc", ".cxx" },
@@ -22,6 +19,13 @@ return {
 			CacheLog = false,
 			EnableBackup = false,
 		},
+		config = function()
+			vim.keymap.set("n", "<leader>rf", function()
+				if vim.bo.filetype == "cpp" then
+					vim.cmd("Make run")
+				end
+			end, { desc = "Run the current cpp file with make.nvim" })
+		end,
 	},
 
 	--Debugging: DAP
@@ -70,6 +74,7 @@ return {
       { "<leader>dw", function() require("dap.ui.widgets").hover() end, desc = "Widgets" },
       {"<leader>daw", "<cmd>DapViewWatch<CR>",  desc = "Add under cursor to watch list" },
       {"<leader>dfr",function() local w = require('dap.ui.widgets'); w.sidebar(w.frames).open() end , desc = "Call stack"},
+      {"<leader>dNV",  function() require("osv").launch({port = 8086}) end,                          desc = "Launch OSV"},
       {"<leader>dt", function()
         require("dap").terminate()
         _G.DAP_IS_ACTIVE = false

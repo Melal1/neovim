@@ -141,8 +141,9 @@ vim.api.nvim_create_autocmd({ "LspAttach", "LspDetach" }, {
 			end
 		end
 
-		-- Diagnostics enabled if at least one LSP is attached
+		-- Diagnostics enabled if at least one LSP is attached and diags are on
 		local clients = vim.lsp.get_clients({ bufnr = buf })
+
 		diag_enabled = (#clients > 0 and copilot == "") or (#clients > 1)
 
 		-- Cache navic module once on LSP attach
@@ -232,7 +233,7 @@ vim.api.nvim_create_autocmd({ "DiagnosticChanged", "BufEnter" }, {
 
 -- DIAGNOSTICS COMPONENT --------------------------------------------------------
 function M.diagnostics_component()
-	if not diag_enabled then
+	if not diag_enabled or not vim.diagnostic.is_enabled() then
 		return ""
 	end
 	local counts = vim.b.statusline_diag_counts

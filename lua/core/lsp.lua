@@ -71,11 +71,8 @@ vim.keymap.set("n", "gm", function()
 end, { desc = "Go to implementation" })
 
 vim.keymap.set("n", "td", function()
-	if vim.diagnostic.is_enabled() then
-		vim.diagnostic.enable(false) -- disable diagnostics
-	else
-		vim.diagnostic.enable(true) -- enable diagnostics
-	end
+	vim.diagnostic.enable(not vim.diagnostic.is_enabled()) -- disable diagnostics
+	vim.cmd("redrawstatus")
 end, { desc = "Toggle diagnostics" })
 
 vim.keymap.set("n", "<leader>ga", function()
