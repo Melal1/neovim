@@ -27,6 +27,57 @@ return {
 			end, { desc = "Run the current cpp file with make.nvim" })
 		end,
 	},
+	-- CodeCompanion Ai
+	{
+		"olimorris/codecompanion.nvim",
+		dependencies = {
+			"nvim-lua/plenary.nvim",
+			"nvim-treesitter/nvim-treesitter",
+		},
+
+		cmd = { "CodeCompanion", "CodeCompanionChat" },
+
+		-- 1. Define your options here
+		opts = {
+			interactions = {
+				chat = {
+					adapter = {
+						name = "gemini",
+						model = "gemini-3.1-flash-lite-preview",
+					},
+				},
+				inline = {
+					adapter = {
+						name = "gemini",
+						model = "gemini-3.1-flash-lite-preview",
+					},
+				},
+				cmd = {
+					adapter = {
+						name = "gemini",
+						model = "gemini-3.1-flash-lite-preview",
+					},
+				},
+			},
+		},
+		-- 2. You MUST pass 'opts' into this function
+		config = function(_, opts)
+			-- 3. Tell CodeCompanion to actually use your opts!
+			require("codecompanion").setup(opts)
+
+			-- 4. Your Keymaps
+			vim.keymap.set({ "n", "v" }, "<C-a>", "<cmd>CodeCompanionActions<cr>", { noremap = true, silent = true })
+			vim.keymap.set(
+				{ "n", "v" },
+				"<LocalLeader>a",
+				"<cmd>CodeCompanionChat Toggle<cr>",
+				{ noremap = true, silent = true }
+			)
+			vim.keymap.set("v", "ga", "<cmd>CodeCompanionChat Add<cr>", { noremap = true, silent = true })
+
+			vim.cmd([[cab cc CodeCompanion]])
+		end,
+	},
 
 	--Debugging: DAP
 	{
