@@ -88,33 +88,54 @@ return {
 	-- 	end,
 	-- },
 	--Colorizer: ccc
-	{
-		"uga-rosa/ccc.nvim",
-		keys = {
-			{ "<leader>cct", "<cmd>CccHighlighterToggle<CR>", desc = "Toggle color highlighter" },
-		},
-    cmd = {
-      "CccPick"
-    },
-		config = function()
-			require("ccc").setup({
-				highlighter = {
-					auto_enable = false, -- Keep disabled by default to save time
-					lsp = true, -- Leverage LSP for accuracy
-				},
-				outputs = {
-					require("ccc").output.hex, -- #RRGGBB
-					require("ccc").output.css_rgb, -- rgb(255, 0, 0)
-					require("ccc").output.css_rgba, -- rgba(255, 0, 0, 0.5)
-				},
-			})
+	-- {
+	-- 	"uga-rosa/ccc.nvim",
+	-- 	keys = {
+	-- 		{ "<leader>cct", "<cmd>CccHighlighterToggle<CR>", desc = "Toggle color highlighter" },
+	-- 	},
+	-- 	cmd = {
+	-- 		"CccPick",
+	-- 	},
+	-- 	config = function()
+	-- 		require("ccc").setup({
+	-- 			highlighter = {
+	-- 				auto_enable = false, -- Keep disabled by default to save time
+	-- 				lsp = true, -- Leverage LSP for accuracy
+	-- 			},
+	-- 			outputs = {
+	-- 				require("ccc").output.hex, -- #RRGGBB
+	-- 				require("ccc").output.css_rgb, -- rgb(255, 0, 0)
+	-- 				require("ccc").output.css_rgba, -- rgba(255, 0, 0, 0.5)
+	-- 			},
+	-- 		})
+	--
+	-- 		-- Add other keybindings after the plugin is set up
+	-- 		vim.api.nvim_set_keymap("n", "<leader>cp", "<cmd>CccPick<CR>", { noremap = true, silent = true })
+	-- 		vim.api.nvim_set_keymap("n", "<leader>cc", "<cmd>CccConvert<CR>", { noremap = true, silent = true })
+	-- 		vim.api.nvim_set_keymap("v", "<leader>cs", "<Plug>(ccc-select-color)", { noremap = true, silent = true })
+	-- 	end,
+	-- },
 
-			-- Add other keybindings after the plugin is set up
-			vim.api.nvim_set_keymap("n", "<leader>cp", "<cmd>CccPick<CR>", { noremap = true, silent = true })
-			vim.api.nvim_set_keymap("n", "<leader>cc", "<cmd>CccConvert<CR>", { noremap = true, silent = true })
-			vim.api.nvim_set_keymap("v", "<leader>cs", "<Plug>(ccc-select-color)", { noremap = true, silent = true })
-		end,
+	{
+    "Melal1/nvim-colorpicker",
+		dependencies = { "mikevskater/nvim-float" },
+		cmd = { "ColorPicker", "ColorPickerAtCursor", "ColorPickerMini" },
+		keys = {
+			{ "<leader>cp", "<Plug>(colorpicker)", desc = "Color Picker" },
+			{ "<leader>cc", "<Plug>(colorpicker-at-cursor)", desc = "Pick at Cursor" },
+			{ "<leader>cm", "<Plug>(colorpicker-mini)", desc = "Mini Picker" },
+			{ "<leader>ch", "<Plug>(colorpicker-highlight-toggle)", desc = "Toggle Highlighting" },
+		},
+		opts = {
+			alpha_enabled = true,
+			presets = { "web", "tailwind" },
+			highlight = {
+				enable = true,
+				filetypes = { "css", "scss", "html", "qml" },
+			},
+		},
 	},
+
 	--Focus: twilight
 	{
 		"folke/twilight.nvim",

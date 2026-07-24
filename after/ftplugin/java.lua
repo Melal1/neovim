@@ -25,6 +25,29 @@ local config = {
 
 require("jdtls").start_or_attach(config)
 
+vim.api.nvim_create_user_command("JavaFile", function()
+	local filename = vim.fn.expand("%:t:r")
+
+	if filename == "" then
+		filename = "Main"
+	end
+
+	local content = {
+		"public class " .. filename .. " {",
+		"",
+		"    public static void main(String[] args) {",
+		"        ",
+		"    }",
+		"}",
+	}
+
+	-- Insert content into the current buffer
+	vim.api.nvim_buf_set_lines(0, 0, -1, false, content)
+
+	-- Move cursor to the middle of the main method (line 4)
+	vim.api.nvim_win_set_cursor(0, { 4, 8 })
+end, {})
+
 local function run_in_tmux(cmd_str)
 	if not os.getenv("TMUX") then
 		vim.notify("This command must be used inside tmux", vim.log.levels.WARN)
@@ -55,12 +78,15 @@ local function get_smart_run_cmd(task, extra_args)
 	if build_file then
 		local project_dir = vim.fs.dirname(build_file)
 		local env_cmd = ""
-		local envrc_files = vim.fs.find(".envrc", { upward = true, path = project_dir, limit = 1, stop = vim.uv.os_homedir() })
+		local envrc_files =
+			vim.fs.find(".envrc", { upward = true, path = project_dir, limit = 1, stop = vim.uv.os_homedir() })
 		if #envrc_files > 0 and vim.fn.executable("direnv") == 1 then
 			local envrc_dir = vim.fs.dirname(envrc_files[1])
 			env_cmd = string.format("direnv exec %s ", vim.fn.shellescape(envrc_dir))
 		end
-		return string.format("cd %s && %sgradle %s%s", vim.fn.shellescape(project_dir), env_cmd, task, extra_args):gsub("%s+$", "")
+		return string
+			.format("cd %s && %sgradle %s%s", vim.fn.shellescape(project_dir), env_cmd, task, extra_args)
+			:gsub("%s+$", "")
 	elseif vim.bo.filetype == "java" and file_path ~= "" then
 		local cwd = vim.fs.dirname(file_path)
 		local env_cmd = ""
@@ -288,6 +314,30 @@ local setup_handlers = {
 			end
 		)
 	end,
+
+	["jdtls"] = function(args)
+		if args[2] == "jdtls" and args[3] == "refresh" then
+			-- 1. Wipe the workspace data directory
+			os.execute("rm -rf " .. workspace_data_dir)
+
+			-- 2. Stop the current JDTLS client using the global API
+			local clients = vim.lsp.get_clients({ name = "jdtls" })
+
+			for _, client in ipairs(clients) do
+				-- This is the "safe" way that doesn't trigger type mismatch errors
+				client.stop(client, true)
+			end
+
+			-- 3. Restart the server
+			vim.defer_fn(function()
+				require("jdtls").start_or_attach(config)
+				vim.notify("JDTLS: Workspace reset and server restarted", vim.log.levels.INFO)
+			end, 500)
+		else
+			vim.notify("Usage: Java set jdtls refresh", vim.log.levels.WARN)
+		end
+	end,
+
 	["dep"] = function(args)
 		local dep = args and args[3]
 		if dep == "javafx" then
@@ -318,10 +368,16 @@ local setup_handlers = {
 					table.insert(new_content, "")
 					table.insert(new_content, "javafx {")
 					if is_kts then
-						table.insert(new_content, '    version = "21" // Use a version that matches your JDK (21 is stable)')
+						table.insert(
+							new_content,
+							'    version = "21" // Use a version that matches your JDK (21 is stable)'
+						)
 						table.insert(new_content, '    modules("javafx.controls", "javafx.fxml")')
 					else
-						table.insert(new_content, "    version = '21' // Use a version that matches your JDK (21 is stable)")
+						table.insert(
+							new_content,
+							"    version = '21' // Use a version that matches your JDK (21 is stable)"
+						)
 						table.insert(new_content, "    modules = [ 'javafx.controls', 'javafx.fxml' ]")
 					end
 					table.insert(new_content, "}")
@@ -338,6 +394,7 @@ local setup_handlers = {
 
 			vim.fn.writefile(new_content, build_file)
 			vim.notify("Added JavaFX plugin and configuration to " .. vim.fs.basename(build_file), vim.log.levels.INFO)
+			os.execute("rm -rf ~/.local/share/nvim/workspace_data/gui")
 		else
 			vim.notify("Unknown dependency: " .. (dep or "nil"), vim.log.levels.ERROR)
 		end
@@ -475,6 +532,10 @@ end, {
 			return vim.tbl_filter(function(v)
 				return v:match("^" .. ArgLead)
 			end, available_settings)
+		elseif parts[2] == "set" and parts[3] == "jdtls" then
+			return vim.tbl_filter(function(v)
+				return v:match("^" .. ArgLead)
+			end, { "refresh" })
 		elseif parts[2] == "set" and parts[3] == "dep" then
 			return vim.tbl_filter(function(v)
 				return v:match("^" .. ArgLead)
@@ -503,4 +564,3 @@ vim.keymap.set("n", "<leader>rf", function()
 		run_in_tmux(run_cmd)
 	end
 end, { desc = "Run Java (Gradle or Single File) in tmux" })
-

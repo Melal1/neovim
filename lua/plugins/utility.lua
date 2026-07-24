@@ -27,6 +27,39 @@ return {
 			end, { desc = "Run the current cpp file with make.nvim" })
 		end,
 	},
+
+	-- Git
+	{
+		"sindrets/diffview.nvim",
+		-- Only load when these commands are used
+		cmd = { "DiffviewOpen", "DiffviewClose", "DiffviewToggleFiles", "DiffviewFocusFiles" },
+		keys = {
+			{ "<leader>GD", "<cmd>DiffviewOpen<cr>", desc = "Diffview Open" },
+			{ "<leader>GH", "<cmd>DiffviewFileHistory %<cr>", desc = "Diffview Current File History" },
+			{ "<leader>GQ", "<cmd>DiffviewClose<cr>", desc = "Diffview Close" },
+		},
+		opts = {
+			enhanced_diff_hl = true, -- Better highlights
+			use_icons = true,
+			icons = {
+				folder_closed = "",
+				folder_open = "",
+			},
+			signs = {
+				fold_closed = "",
+				fold_open = "",
+				done = "✓",
+			},
+			view = {
+				-- Customize the layout of the 3-way merge
+				merge_tool = {
+					-- layout = "diff3_horizontal",
+					disable_diagnostics = true, -- Don't show red squiggly lines during conflicts
+				},
+			},
+		},
+	},
+
 	-- CodeCompanion Ai
 	{
 		"olimorris/codecompanion.nvim",
@@ -150,6 +183,8 @@ return {
 
 			-- CPP
 
+			-- CPP
+
 			dap.configurations.cpp = {
 				{
 					name = "Attach to gdbserver :1234 ( Make )",
@@ -164,6 +199,13 @@ return {
 						return msg
 					end,
 					stopAtEntry = false,
+					setupCommands = {
+						{
+							text = "-enable-pretty-printing",
+							description = "enable pretty printing",
+							ignoreFailures = false,
+						},
+					},
 				},
 				{
 					name = "Attach to gdbserver :1234",
@@ -177,6 +219,13 @@ return {
 						return vim.fn.input("Path to executable: ", vim.fn.getcwd() .. "/", "file")
 					end,
 					stopAtEntry = false,
+					setupCommands = {
+						{
+							text = "-enable-pretty-printing",
+							description = "enable pretty printing",
+							ignoreFailures = false,
+						},
+					},
 				},
 				{
 					name = "Launch file",
@@ -187,6 +236,13 @@ return {
 					end,
 					cwd = "${workspaceFolder}",
 					stopAtEntry = false,
+					setupCommands = {
+						{
+							text = "-enable-pretty-printing",
+							description = "enable pretty printing",
+							ignoreFailures = false,
+						},
+					},
 				},
 			}
 			dap.configurations.lua = {

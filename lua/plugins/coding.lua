@@ -127,15 +127,17 @@ return {
 
 		event = { "BufRead", "BufNewFile" },
 		"saghen/blink.cmp",
-		dependencies = { "fang2hou/blink-copilot" },
-		-- dependencies = { "rafamadriz/friendly-snippets" },
+		dependencies = {
+			"saghen/blink.lib",
+			"fang2hou/blink-copilot",
+			"rafamadriz/friendly-snippets",
+		},
 
-		-- use a release tag to download pre-built binaries
-		version = "1.*",
-		-- AND/OR build from source, requires nightly: https://rust-lang.github.io/rustup/concepts/channels.html#working-with-nightly-rust
-		-- build = 'cargo build --release',
-		-- If you use nix, you can build from source using latest nightly rust with:
-		-- build = 'nix run .#build-plugin',
+		build = function()
+			-- build the fuzzy matcher, optionally add a timeout to `pwait(timeout_ms)`
+			-- you can use `gb` in `:Lazy` to rebuild the plugin as needed
+			require("blink.cmp").build():pwait()
+		end,
 
 		---@module 'blink.cmp'
 		---@type blink.cmp.Config
@@ -195,7 +197,7 @@ return {
 					auto_show = false,
 					border = "single",
 					draw = {
-						padding = { 1, 1 },
+						-- padding = { 1, 1 },
 						components = {
 							kind_icon = {
 								highlight = function(ctx)
@@ -301,11 +303,12 @@ return {
 			{ "nvim-treesitter/nvim-treesitter-textobjects", branch = "main" },
 		},
 		branch = "main",
-		event = { "BufRead", "BufNew" },
+		-- event = { "BufRead", "BufNew" },
+		lazy = false,
 		build = ":TSUpdate",
 		config = function()
 			local ts = require("nvim-treesitter")
-			ts.install({ "python", "cpp", "bash", "lua", "rust", "make", "java", "cmake" })
+			ts.install({ "python", "cpp", "bash", "lua", "rust", "make", "java", "cmake", "qmljs" })
 			vim.api.nvim_create_autocmd("FileType", {
 				callback = function(details)
 					vim.defer_fn(function()

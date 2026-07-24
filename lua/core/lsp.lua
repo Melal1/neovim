@@ -5,8 +5,9 @@ vim.lsp.enable({
 	"ruff",
 	"nil_ls",
 	"jsonls",
-	"qmlls",
+	-- "qmlls",
 	"clangd",
+	"qmlgolsp",
 	-- "harper_ls",
 })
 
