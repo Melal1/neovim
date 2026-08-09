@@ -1,48 +1,26 @@
 local M = {}
 
-function ExeFiles(FilePath)
-	local Finder = require("config.utils.make.shared.finder")
-  local Parser = require("config.utils.make.modules.parser")
-	local Root = Finder.FindRoot(FilePath, 4, { "Makefile" })
-	if not Root then
-		vim.notify("Could not find project root", vim.log.levels.ERROR)
-		return nil, -1
-	end
- 
-  P
-	local FsScandir = vim.loop.fs_scandir(BuildDir)
-	if not FsScandir then
-		vim.notify("Could not open build directory: " .. BuildDir, vim.log.levels.ERROR)
-		return nil, -2
-	end
-
-	local ExeFiles = {}
-	while true do
-		local Name, Type = vim.loop.fs_scandir_next(FsScandir)
-		if not Name then
-			break
-		end
-		if Type == "file" and vim.fn.fnamemodify(Name, ":e") == "" then
-			table.insert(ExeFiles, Name)
-		end
-	end
-
-	if #ExeFiles == 0 then
-		vim.notify("No executables found in build directory", vim.log.levels.WARN)
-		return nil, 0
-	end
-
-	return ExeFiles, Root
-end
-
+-- 1. The Debug Runner (from earlier, with herdr support)
 function M.RunDebug(Filetype, ExecutablePath)
 	local Db = {
 		cpp = function()
-			if os.getenv("TMUX") then
-				local Cmd = string.format('gdbserver --no-startup-with-shell :1234 "%s"', ExecutablePath)
+			local Cmd = string.format('gdbserver --no-startup-with-shell :1234 "%s"', ExecutablePath)
+
+			if os.getenv("HERDR_ENV") == "1" then
+				local split_cmd = "herdr pane split --current --direction right --no-focus"
+				local split_out = vim.fn.system(split_cmd)
+
+				local ok, parsed = pcall(vim.fn.json_decode, split_out)
+				if ok and parsed and parsed.result and parsed.result.pane and parsed.result.pane.pane_id then
+					local pane_id = parsed.result.pane.pane_id
+					local run_cmd = string.format("herdr pane run %s '%s'", pane_id, Cmd)
+					vim.fn.system(run_cmd)
+				else
+					vim.notify("Failed to split herdr pane or parse response.", vim.log.levels.ERROR)
+				end
+			elseif os.getenv("TMUX") then
 				vim.fn.system("tmux split-window -h -l 30 " .. Cmd)
 			else
-				local Cmd = string.format('gdbserver --no-startup-with-shell :1234 "%s"', ExecutablePath)
 				local term = require("config.utils.toggleTerm")
 				term.SingleShot(Cmd)
 				return
@@ -54,46 +32,55 @@ function M.RunDebug(Filetype, ExecutablePath)
 		Db[Filetype]()
 	else
 		vim.notify("No debug configuration for filetype: " .. Filetype, vim.log.levels.WARN)
-		return
 	end
 end
 
----@param MakeBuildFirst? boolean
-function M.Debug(MakeBuildFirst)
-	local FilePath = vim.fn.expand("%:p")
-	local Picker = require("config.utils.pick")
-	local dap = require("dap")
+-- 2. The New Executable Picker (Replaces your make plugin)
+function M.DebugFromBuild(Filetype)
+	Filetype = Filetype or "cpp"
+	local cwd = vim.fn.getcwd()
+	local build_dir = cwd .. "/build"
 
-	MakeBuildFirst = MakeBuildFirst or false
-
-	if not Picker.available then
-		vim.notify("Pickers are not available", vim.log.levels.ERROR)
-		return dap.ABORT
+	-- Check if 'build' directory exists
+	if vim.fn.isdirectory(build_dir) == 0 then
+		vim.notify("No 'build' directory found in current path.", vim.log.levels.WARN)
+		return
 	end
 
-	if MakeBuildFirst then
-		vim.cmd("Make build")
+	-- Find all executable files inside the 'build' directory
+	-- Note: "-executable" is a GNU find extension. If you are on macOS,
+	-- you may need to change this to: find %s -type f -perm -0111
+	local find_cmd = string.format("find %s -type f -executable", vim.fn.shellescape(build_dir))
+	local output = vim.fn.system(find_cmd)
+
+	if vim.v.shell_error ~= 0 or output == "" or not output then
+		vim.notify("No executables found in the 'build' directory.", vim.log.levels.WARN)
+		return
 	end
 
-	local Files, Root = ExeFiles(FilePath)
-	if not Files then
-		vim.notify("No executable files found.", vim.log.levels.WARN)
-		return dap.ABORT
+	-- Parse the terminal output into a Lua table
+	local executables = {}
+	for line in output:gmatch("[^\r\n]+") do
+		table.insert(executables, line)
 	end
 
-	return coroutine.create(function(dap_run_co)
-		Picker.pick_single(Files, function(selected)
-			local ExecutablePath
+	-- Use Snacks (via vim.ui.select) to pop open a fuzzy finder for the executables
+	-- Make sure `ui_select = true` is enabled in your Snacks.picker config!
+	Snacks.picker.select(executables, {
+		prompt = "Select Executable to Debug",
+		format_item = function(item)
+			-- This makes the picker UI cleaner by showing relative paths
+			-- (e.g., "build/my_app" instead of "/home/user/.../build/my_app")
+			return vim.fn.fnamemodify(item, ":.")
+		end,
+	}, function(selected)
+		-- This callback fires when you hit Enter on an executable
+		if not selected then
+			return -- The user hit Escape/aborted
+		end
 
-			if selected then
-				ExecutablePath = Root.Path .. "/" .. Root.Marker .. "/" .. selected
-			else
-				ExecutablePath = dap.ABORT
-			end
-
-			M.RunDebug(vim.bo.filetype, ExecutablePath)
-			coroutine.resume(dap_run_co, ExecutablePath)
-		end, { prompt_title = "Select executable to debug" })
+		-- Forward the selection to your herdr/gdb logic
+		M.RunDebug(Filetype, selected)
 	end)
 end
 

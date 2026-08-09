@@ -16,9 +16,16 @@ return {
 					enabled = false,
 				},
 				debugger = {
+					-- Path to custom coreclr DAP adapter
+					-- When set, this fully overrides `engine`; easy-dotnet-server uses this binary as-is.
+					-- When nil, easy-dotnet-server falls back to its own bundled debugger selected by `engine`.
 					bin_path = "netcoredbg",
+					-- Which bundled debugger to use when `bin_path` is nil.
+					--   "netcoredbg" (default) — Samsung netcoredbg
+					--   "dncdbg"               — viewizard/dncdbg (a fork of netcoredbg with a richer set of features)
+					--   "sharpdbg"             — MattParkerDev/sharpdbg (a new debugger written in C#)
 					engine = "netcoredbg",
-					console = "externalTerminal",
+					console = "externalTerminal", -- Controls where the target app runs: "integratedTerminal" (Neovim buffer) or "externalTerminal" (OS window)
 					apply_value_converters = true,
 					auto_register_dap = true,
 					mappings = {
@@ -27,6 +34,7 @@ return {
 				},
 			})
 
+			-- Run / watch (primary entrypoints from `:Dotnet run` family)
 			vim.keymap.set("n", "<leader>nr",  dotnet.run,                 { desc = "dotnet: run (picker)" })
 			vim.keymap.set("n", "<leader>nR", dotnet.run_default,         { desc = "dotnet: run default project" })
 			vim.keymap.set("n", "<leader>np",  dotnet.run_profile,         { desc = "dotnet: run --launch-profile" })
@@ -34,13 +42,16 @@ return {
 			vim.keymap.set("n", "<leader>nw",  dotnet.watch,               { desc = "dotnet: watch (picker)" })
 			vim.keymap.set("n", "<leader>nW", dotnet.watch_default,        { desc = "dotnet: watch default project" })
 
+			-- Build / test / clean
 			vim.keymap.set("n", "<leader>nb", dotnet.build,    { desc = "dotnet: build (picker)" })
 			vim.keymap.set("n", "<leader>nt", dotnet.test,     { desc = "dotnet: test (picker)" })
 			vim.keymap.set("n", "<leader>nc", dotnet.clean,     { desc = "dotnet: clean" })
 
+			-- Debug (bundled netcoredbg via DAP)
 			vim.keymap.set("n", "<leader>nd",  dotnet.debug,         { desc = "dotnet: debug (picker)" })
 			vim.keymap.set("n", "<leader>nD", dotnet.debug_default, { desc = "dotnet: debug default" })
 
+			-- Toggle the Rider-like test runner window
 			vim.keymap.set("n", "<leader>no", dotnet.testrunner, { desc = "dotnet: toggle test runner" })
 		end,
 	},
@@ -50,39 +61,45 @@ return {
 		---@module 'roslyn.config'
 		---@type RoslynNvimConfig
 		opts = {
+			-- Let the Roslyn LSP server manage filewatching itself instead of
+			-- Neovim's libuv recursive watcher (which spawns one inotify watch
+			-- per file under the workspace root — was hitting the 524288
+			-- max_user_watches cap with ~262k watches per client instance).
 			filewatching = "roslyn",
+			-- your configuration comes here; leave empty for default settings
 		},
 		ft = { "cs" },
 	},
 	-- BuildSystem: make.nvim
-	{
-		dir = "~/Dev/projects/lua/make.nvim",
-		name = "make.nvim",
-		enabled = true,
-		dependencies = {
-			"nvim-telescope/telescope.nvim",
-		},
-		ft = { "cpp" },
-		---@type make.Options
-		opts = {
-			SourceExtensions = { ".cpp", ".c", ".cc", ".cxx" },
-			RootMarkers = { ".git", "src", "include", "build", "Makefile" },
-			MaxSearchLevels = 5,
-			CacheUseHash = true,
-			CacheFormat = "luabytecode", -- or "mpack"
-			CacheDir = ".cache/make.nviM",
-			CacheLog = false,
-			EnableBackup = false,
-		},
-		config = function()
-			vim.keymap.set("n", "<leader>rf", function()
-				if vim.bo.filetype == "cpp" then
-					vim.cmd("Make run")
-				end
-			end, { desc = "Run the current cpp file with make.nvim" })
-		end,
-	},
+	-- {
+	-- 	dir = "~/Dev/projects/lua/make.nvim",
+	-- 	name = "make.nvim",
+	-- 	enabled = true,
+	-- 	dependencies = {
+	-- 		"nvim-telescope/telescope.nvim",
+	-- 	},
+	-- 	ft = { "cpp" },
+	-- 	---@type make.Options
+	-- 	opts = {
+	-- 		SourceExtensions = { ".cpp", ".c", ".cc", ".cxx" },
+	-- 		RootMarkers = { ".git", "src", "include", "build", "Makefile" },
+	-- 		MaxSearchLevels = 5,
+	-- 		CacheUseHash = true,
+	-- 		CacheFormat = "luabytecode", -- or "mpack"
+	-- 		CacheDir = ".cache/make.nviM",
+	-- 		CacheLog = false,
+	-- 		EnableBackup = false,
+	-- 	},
+	-- 	config = function()
+	-- 		vim.keymap.set("n", "<leader>rf", function()
+	-- 			if vim.bo.filetype == "cpp" then
+	-- 				vim.cmd("Make run")
+	-- 			end
+	-- 		end, { desc = "Run the current cpp file with make.nvim" })
+	-- 	end,
+	-- },
 
+	{ dir = "~/Dev/projects/lua/make.nvim.rewrite", name = "maker.nvim", enabled = true },
 	-- Git
 	{
 		"sindrets/diffview.nvim",
@@ -235,14 +252,9 @@ return {
 				type = "executable",
 				command = debuggerPath,
 			}
-
-			-- CPP
-
-			-- CPP
-
 			dap.configurations.cpp = {
 				{
-					name = "Attach to gdbserver :1234 ( Make )",
+					name = "Attach to gdbserver :1234 ( Snacks + Herdr )",
 					type = "cppdbg",
 					request = "launch",
 					MIMode = "gdb",
@@ -250,8 +262,50 @@ return {
 					miDebuggerPath = "/run/current-system/sw/bin/gdb",
 					cwd = "${workspaceFolder}",
 					program = function()
-						local msg = require("make").Debug(true)
-						return msg
+						return coroutine.create(function(dap_run_co)
+							local cwd = vim.fn.getcwd()
+							local build_dir = cwd .. "/build"
+
+							if vim.fn.isdirectory(build_dir) == 0 then
+								vim.notify("No 'build' directory found.", vim.log.levels.WARN)
+								return
+							end
+
+							local find_cmd = string.format("find %s -type f -executable", vim.fn.shellescape(build_dir))
+							local output = vim.fn.system(find_cmd)
+
+							if vim.v.shell_error ~= 0 or output == "" or not output then
+								vim.notify("No executables found in 'build'.", vim.log.levels.WARN)
+								return
+							end
+
+							local executables = {}
+							for line in output:gmatch("[^\r\n]+") do
+								table.insert(executables, line)
+							end
+
+							Snacks.picker.select(executables, {
+								prompt = "Select Executable to Debug",
+								format_item = function(item)
+									return vim.fn.fnamemodify(item, ":.")
+								end,
+							}, function(selected)
+								if not selected then
+									return -- User aborted
+								end
+
+								-- 1. Call the herdr split function we made earlier
+								-- IMPORTANT: Replace 'YOUR_MODULE_PATH' with the actual lua path
+								-- to where you saved the M.RunDebug function (e.g., 'utils.debug')
+								require("config.debug").RunDebug("cpp", selected)
+
+								-- 2. Give herdr/gdbserver 200ms to spin up and bind to port 1234
+								-- before telling DAP to connect.
+								vim.defer_fn(function()
+									coroutine.resume(dap_run_co, selected)
+								end, 200)
+							end)
+						end)
 					end,
 					stopAtEntry = false,
 					setupCommands = {
@@ -263,31 +317,12 @@ return {
 					},
 				},
 				{
-					name = "Attach to gdbserver :1234",
-					type = "cppdbg",
-					request = "launch",
-					MIMode = "gdb",
-					miDebuggerServerAddress = "localhost:1234",
-					miDebuggerPath = "/run/current-system/sw/bin/gdb",
-					cwd = "${workspaceFolder}",
-					program = function()
-						return vim.fn.input("Path to executable: ", vim.fn.getcwd() .. "/", "file")
-					end,
-					stopAtEntry = false,
-					setupCommands = {
-						{
-							text = "-enable-pretty-printing",
-							description = "enable pretty printing",
-							ignoreFailures = false,
-						},
-					},
-				},
-				{
-					name = "Launch file",
+					name = "Launch file locally (No gdbserver)",
 					type = "cppdbg",
 					request = "launch",
 					program = function()
-						return vim.fn.input("Path to executable: ", vim.fn.getcwd() .. "/", "file")
+						-- Keeping this as a fallback if you just want to run locally without herdr
+						return vim.fn.input("Path to executable: ", vim.fn.getcwd() .. "/build/", "file")
 					end,
 					cwd = "${workspaceFolder}",
 					stopAtEntry = false,
@@ -397,6 +432,7 @@ return {
 		end,
 		lazy = true,
 	},
+	--Telescope
 	-- {
 	-- 	"nvim-telescope/telescope.nvim",
 	-- 	tag = "0.1.8",
@@ -534,6 +570,7 @@ return {
 	-- 	end,
 	-- },
 	-- File Picker : Snacks
+	{
 		"folke/snacks.nvim",
 		VeryLazy = true,
 		config = function()
@@ -551,6 +588,8 @@ return {
 			})
 		end,
 		---@type snacks.Config
+		keys = {
+			{
 				"<leader><space>",
 				function()
 					Snacks.picker.smart()
@@ -828,6 +867,7 @@ return {
 					Snacks.picker.undo()
 				end,
 				desc = "Undo History",
+			},
 			{
 				"<leader>suC",
 				function()
@@ -900,7 +940,10 @@ return {
 				end,
 				desc = "LSP Workspace Symbols",
 			},
-			-- Other	--TODO:
+			-- Other
+		},
+	},
+	--TODO:
 	{
 		"folke/todo-comments.nvim",
 		keys = { { "<leader>ltd" } },
