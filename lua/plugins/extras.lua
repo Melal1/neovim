@@ -71,17 +71,78 @@ return {
 	-- 	end,
 	-- },
 	--Tumx Nav
+	-- {
+	-- 	"alexghergh/nvim-tmux-navigation",
+	-- 	keys = {
+	-- 		{ "<c-h>", "<cmd>NvimTmuxNavigateLeft<cr>" },
+	-- 		{ "<c-j>", "<cmd>NvimTmuxNavigateDown<cr>" },
+	-- 		{ "<c-k>", "<cmd>NvimTmuxNavigateUp<cr>" },
+	-- 		{ "<c-l>", "<cmd>NvimTmuxNavigateRight<cr>" },
+	-- 	},
+	-- 	config = function()
+	-- 		require("nvim-tmux-navigation").setup({})
+	-- 	end,
+	-- },
 	{
-		"alexghergh/nvim-tmux-navigation",
+		"lmilojevicc/herdr-splits.nvim",
 		keys = {
-			{ "<c-h>", "<cmd>NvimTmuxNavigateLeft<cr>" },
-			{ "<c-j>", "<cmd>NvimTmuxNavigateDown<cr>" },
-			{ "<c-k>", "<cmd>NvimTmuxNavigateUp<cr>" },
-			{ "<c-l>", "<cmd>NvimTmuxNavigateRight<cr>" },
+			{
+				"<C-h>",
+				function()
+					require("herdr-splits").move_cursor_left()
+				end,
+				desc = "Navigate left",
+			},
+			{
+				"<C-j>",
+				function()
+					require("herdr-splits").move_cursor_down()
+				end,
+				desc = "Navigate down",
+			},
+			{
+				"<C-k>",
+				function()
+					require("herdr-splits").move_cursor_up()
+				end,
+				desc = "Navigate up",
+			},
+			{
+				"<C-l>",
+				function()
+					require("herdr-splits").move_cursor_right()
+				end,
+				desc = "Navigate right",
+			},
+			{
+				"<M-h>",
+				function()
+					require("herdr-splits").resize_left()
+				end,
+				desc = "Resize left",
+			},
+			{
+				"<M-j>",
+				function()
+					require("herdr-splits").resize_down()
+				end,
+				desc = "Resize down",
+			},
+			{
+				"<M-k>",
+				function()
+					require("herdr-splits").resize_up()
+				end,
+				desc = "Resize up",
+			},
+			{
+				"<M-l>",
+				function()
+					require("herdr-splits").resize_right()
+				end,
+				desc = "Resize right",
+			},
 		},
-		config = function()
-			require("nvim-tmux-navigation").setup({})
-		end,
 	},
 	--Gx
 	{
