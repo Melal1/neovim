@@ -320,6 +320,7 @@ local ignore = {
 	["dap-view"] = true,
 	["dap-view-term"] = true,
 	["dap-view-help"] = true,
+	["dap-view-hover"] = true,
 }
 
 local function update_winbar(win, buf)
@@ -327,7 +328,6 @@ local function update_winbar(win, buf)
 	buf = buf or vim.api.nvim_win_get_buf(win)
 	local ft = vim.bo[buf].filetype
 	if ignore[ft] then
-		vim.wo[win].winbar = ""
 		return
 	end
 	if _G.DAP_IS_ACTIVE and breadcrumb_on then
