@@ -1,4 +1,59 @@
 return {
+	--- c sharp
+	-- lazy.nvim
+	{
+		"GustavEikaas/easy-dotnet.nvim",
+		dependencies = { "nvim-lua/plenary.nvim", "folke/snacks.nvim" },
+		ft = "cs",
+		config = function()
+			local dotnet = require("easy-dotnet")
+			dotnet.setup({
+				external_terminal = {
+					command = "kitty",
+					args = { "--hold", "--" },
+				},
+				lsp = {
+					enabled = false,
+				},
+				debugger = {
+					bin_path = "netcoredbg",
+					engine = "netcoredbg",
+					console = "externalTerminal",
+					apply_value_converters = true,
+					auto_register_dap = true,
+					mappings = {
+						open_variable_viewer = { lhs = "T", desc = "open variable viewer" },
+					},
+				},
+			})
+
+			vim.keymap.set("n", "<leader>nr",  dotnet.run,                 { desc = "dotnet: run (picker)" })
+			vim.keymap.set("n", "<leader>nR", dotnet.run_default,         { desc = "dotnet: run default project" })
+			vim.keymap.set("n", "<leader>np",  dotnet.run_profile,         { desc = "dotnet: run --launch-profile" })
+			vim.keymap.set("n", "<leader>nP",  dotnet.run_profile_default, { desc = "dotnet: run default with profile" })
+			vim.keymap.set("n", "<leader>nw",  dotnet.watch,               { desc = "dotnet: watch (picker)" })
+			vim.keymap.set("n", "<leader>nW", dotnet.watch_default,        { desc = "dotnet: watch default project" })
+
+			vim.keymap.set("n", "<leader>nb", dotnet.build,    { desc = "dotnet: build (picker)" })
+			vim.keymap.set("n", "<leader>nt", dotnet.test,     { desc = "dotnet: test (picker)" })
+			vim.keymap.set("n", "<leader>nc", dotnet.clean,     { desc = "dotnet: clean" })
+
+			vim.keymap.set("n", "<leader>nd",  dotnet.debug,         { desc = "dotnet: debug (picker)" })
+			vim.keymap.set("n", "<leader>nD", dotnet.debug_default, { desc = "dotnet: debug default" })
+
+			vim.keymap.set("n", "<leader>no", dotnet.testrunner, { desc = "dotnet: toggle test runner" })
+		end,
+	},
+
+	{
+		"seblyng/roslyn.nvim",
+		---@module 'roslyn.config'
+		---@type RoslynNvimConfig
+		opts = {
+			filewatching = "roslyn",
+		},
+		ft = { "cs" },
+	},
 	-- BuildSystem: make.nvim
 	{
 		dir = "~/Dev/projects/lua/make.nvim",
