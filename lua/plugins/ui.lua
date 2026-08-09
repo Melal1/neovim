@@ -55,7 +55,7 @@ return {
 		end,
 		keys = {
 			{
-				"<leader><leader>w",
+				"<leader>enw",
 				function()
 					vim.g.minicursorword_disable = not vim.g.minicursorword_disable
 				end,

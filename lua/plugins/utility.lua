@@ -1249,7 +1249,7 @@ return {
 		cmd = "Copilot",
 		keys = {
 			{ "<leader>tc", "<cmd>Copilot enable | Copilot toggle<CR>", mode = "n", desc = "Toggle Copilot" },
-			{ "<leader><leader>tc", "<cmd>Copilot disable<CR>", mode = "n", desc = "Toggle Copilot" },
+			{ "<leader>tC", "<cmd>Copilot disable<CR>", mode = "n", desc = "Toggle Copilot" },
 		},
 		opts = {
 			suggestion = { enabled = false },

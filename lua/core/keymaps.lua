@@ -32,7 +32,7 @@ map(
 	{ desc = "Change all occurrences of word" }
 )
 
-map("n", "<leader><leader>x", function()
+map("n", "<leader>eX", function()
 	vim.cmd(".lua")
 end, { desc = "Execute current line" })
 
