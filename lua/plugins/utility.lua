@@ -397,144 +397,510 @@ return {
 		end,
 		lazy = true,
 	},
-	--Telescope
-	{
-		"nvim-telescope/telescope.nvim",
-		tag = "0.1.8",
-		cmd = "Telescope",
-		-- Looks messy btw , but this is a simple solution
-    -- stylua: ignore
-		keys = {
-			{ "<leader>opc",function() require("telescope.builtin").find_files({ cwd = require("lazy.core.config").options.root }) end,desc = "Find Plugin File" },
-			{"<leader>frg",function() require("telescope.builtin").registers() end,desc = "Registers",},
-			{"<leader>ff", function() require("telescope.builtin").find_files() end, desc = "Find Files",},
-			{"<leader>fg", function() require("telescope.builtin").live_grep() end, desc = "Live Grep",},
-			{"<leader>fb", function() require("telescope.builtin").buffers() end, desc = "Buffers",},
-			{"<leader>fp", function() require("telescope").extensions.projects.projects() end, desc = "Projects",},
-			{"<leader>fSt", function() local word = vim.fn.expand("<cWORD>") require("telescope.builtin").grep_string({ search = word }) end, desc = "Grep WORD under cursor (includes punctuation)",},
-			{"<leader>fst", function() local word = vim.fn.expand("<cword>") require("telescope.builtin").grep_string({ search = word }) end, desc = "Grep word under cursor (stops at punctuation)",},
-			{"<leader>fo", function() require("telescope.builtin").oldfiles() end, desc = "Old Files",},
-			{"<leader>OO", function() require("telescope.builtin").lsp_document_symbols() end, desc = "LSP Document Symbols",},
-			{"<leader>fdia", function() require("telescope.builtin").diagnostics() end, desc = "Diagnostics",},
-			{"<leader>frf",function () require("telescope.builtin").lsp_references() end, desc = "LSP References",},
-		},
-
-		dependencies = {
-			"nvim-lua/plenary.nvim",
-			"jmacadie/telescope-hierarchy.nvim",
-			{
-				"nvim-telescope/telescope-fzf-native.nvim",
-				build = "cmake -S. -Bbuild -DCMAKE_BUILD_TYPE=Release && cmake --build build --config Release",
-			},
-			"nvim-telescope/telescope-ui-select.nvim",
-			"ahmedkhalf/project.nvim",
-		},
+	-- {
+	-- 	"nvim-telescope/telescope.nvim",
+	-- 	tag = "0.1.8",
+	-- 	cmd = "Telescope",
+	-- 	-- Looks messy btw , but this is a simple solution
+	--    -- stylua: ignore
+	-- 	keys = {
+	-- 		{ "<leader>opc",function() require("telescope.builtin").find_files({ cwd = require("lazy.core.config").options.root }) end,desc = "Find Plugin File" },
+	-- 		{"<leader>frg",function() require("telescope.builtin").registers() end,desc = "Registers",},
+	-- 		{"<leader>ff", function() require("telescope.builtin").find_files() end, desc = "Find Files",},
+	-- 		{"<leader>fg", function() require("telescope.builtin").live_grep() end, desc = "Live Grep",},
+	-- 		{"<leader>fb", function() require("telescope.builtin").buffers() end, desc = "Buffers",},
+	-- 		{"<leader>fp", function() require("telescope").extensions.projects.projects() end, desc = "Projects",},
+	-- 		{"<leader>fSt", function() local word = vim.fn.expand("<cWORD>") require("telescope.builtin").grep_string({ search = word }) end, desc = "Grep WORD under cursor (includes punctuation)",},
+	-- 		{"<leader>fst", function() local word = vim.fn.expand("<cword>") require("telescope.builtin").grep_string({ search = word }) end, desc = "Grep word under cursor (stops at punctuation)",},
+	-- 		{"<leader>fo", function() require("telescope.builtin").oldfiles() end, desc = "Old Files",},
+	-- 		{"<leader>OO", function() require("telescope.builtin").lsp_document_symbols() end, desc = "LSP Document Symbols",},
+	-- 		{"<leader>fdia", function() require("telescope.builtin").diagnostics() end, desc = "Diagnostics",},
+	-- 		{"<leader>frf",function () require("telescope.builtin").lsp_references() end, desc = "LSP References",},
+	-- 	},
+	--
+	-- 	dependencies = {
+	-- 		"nvim-lua/plenary.nvim",
+	-- 		"jmacadie/telescope-hierarchy.nvim",
+	-- 		{
+	-- 			"nvim-telescope/telescope-fzf-native.nvim",
+	-- 			build = "cmake -S. -Bbuild -DCMAKE_BUILD_TYPE=Release && cmake --build build --config Release",
+	-- 		},
+	-- 		"nvim-telescope/telescope-ui-select.nvim",
+	-- 		"ahmedkhalf/project.nvim",
+	-- 	},
+	-- 	config = function()
+	-- 		local telescope = require("telescope")
+	-- 		local actions = require("telescope.actions")
+	-- 		telescope.setup({
+	-- 			defaults = {
+	-- 				preview = {
+	-- 					treesitter = false,
+	-- 				},
+	-- 				mappings = {
+	-- 					i = {
+	-- 						["<esc>"] = actions.close,
+	-- 					},
+	-- 				},
+	-- 				path_display = {
+	-- 					"filename_first",
+	-- 				},
+	-- 				previewer = false,
+	-- 				prompt_prefix = "    ",
+	-- 				selection_caret = " ",
+	-- 				file_ignore_patterns = { "node_modules", "package-lock.json", "lazy-lock.json" },
+	-- 				scroll_strategy = "limit", -- don't rollover when scrolling
+	-- 				initial_mode = "insert",
+	-- 				select_strategy = "reset",
+	-- 				sorting_strategy = "ascending",
+	-- 				color_devicons = true,
+	-- 				border = true,
+	-- 				borderchars = {
+	-- 					prompt = { "─", "│", "─", "│", "┌", "┐", "│", "│" },
+	-- 					results = { "─", "│", "─", "│", "├", "┤", "┘", "└" },
+	-- 					preview = { "─", "│", "─", "│", "┌", "┐", "┘", "└" },
+	-- 				},
+	-- 				set_env = { ["COLORTERM"] = "truecolor" }, -- default = nil,
+	-- 				layout_config = {
+	-- 					prompt_position = "top",
+	-- 					preview_cutoff = 120,
+	-- 				},
+	-- 				vimgrep_arguments = {
+	-- 					"rg",
+	-- 					"--color=never",
+	-- 					"--no-heading",
+	-- 					"--with-filename",
+	-- 					"--line-number",
+	-- 					"--column",
+	-- 					"--smart-case",
+	-- 					"--hidden",
+	-- 					"--glob=!.git/",
+	-- 				},
+	-- 			},
+	-- 			pickers = {
+	-- 				buffers = {
+	-- 					mappings = {
+	-- 						i = {
+	-- 							["<c-d>"] = actions.delete_buffer,
+	-- 						},
+	-- 						n = {
+	-- 							["<c-d>"] = actions.delete_buffer,
+	-- 						},
+	-- 					},
+	-- 					previewer = false,
+	-- 					initial_mode = "normal",
+	-- 					-- theme = "dropdown",
+	-- 					layout_config = {
+	-- 						height = 0.4,
+	-- 						width = 0.6,
+	-- 						prompt_position = "top",
+	-- 						preview_cutoff = 120,
+	-- 					},
+	-- 				},
+	-- 				current_buffer_fuzzy_find = {
+	-- 					previewer = true,
+	-- 					layout_config = {
+	-- 						prompt_position = "top",
+	-- 						preview_cutoff = 120,
+	-- 					},
+	-- 				},
+	-- 			},
+	-- 			extensions = {
+	-- 				["ui-select"] = {
+	-- 					require("telescope.themes").get_dropdown({
+	-- 						previewer = false,
+	-- 						initial_mode = "normal",
+	-- 						sorting_strategy = "ascending",
+	-- 						layout_strategy = "horizontal",
+	-- 						layout_config = {
+	-- 							horizontal = {
+	-- 								width = 0.5,
+	-- 								height = 0.4,
+	-- 								preview_width = 0.6,
+	-- 							},
+	-- 						},
+	-- 					}),
+	-- 				},
+	-- 			},
+	-- 		})
+	--
+	-- 		-- Setup project.nvim
+	-- 		require("project_nvim").setup({})
+	--
+	-- 		-- Load extensions
+	-- 		telescope.load_extension("ui-select")
+	-- 		telescope.load_extension("projects")
+	-- 		telescope.load_extension("fzf")
+	-- 		telescope.load_extension("hierarchy")
+	-- 	end,
+	-- },
+	-- File Picker : Snacks
+		"folke/snacks.nvim",
+		VeryLazy = true,
 		config = function()
-			local telescope = require("telescope")
-			local actions = require("telescope.actions")
-			telescope.setup({
-				defaults = {
-					preview = {
-						treesitter = false,
-					},
-					mappings = {
-						i = {
-							["<esc>"] = actions.close,
-						},
-					},
-					path_display = {
-						"filename_first",
-					},
-					previewer = false,
-					prompt_prefix = "    ",
-					selection_caret = " ",
-					file_ignore_patterns = { "node_modules", "package-lock.json", "lazy-lock.json" },
-					scroll_strategy = "limit", -- don't rollover when scrolling
-					initial_mode = "insert",
-					select_strategy = "reset",
-					sorting_strategy = "ascending",
-					color_devicons = true,
-					border = true,
-					borderchars = {
-						prompt = { "─", "│", "─", "│", "┌", "┐", "│", "│" },
-						results = { "─", "│", "─", "│", "├", "┤", "┘", "└" },
-						preview = { "─", "│", "─", "│", "┌", "┐", "┘", "└" },
-					},
-					set_env = { ["COLORTERM"] = "truecolor" }, -- default = nil,
-					layout_config = {
-						prompt_position = "top",
-						preview_cutoff = 120,
-					},
-					vimgrep_arguments = {
-						"rg",
-						"--color=never",
-						"--no-heading",
-						"--with-filename",
-						"--line-number",
-						"--column",
-						"--smart-case",
-						"--hidden",
-						"--glob=!.git/",
-					},
-				},
-				pickers = {
-					buffers = {
-						mappings = {
-							i = {
-								["<c-d>"] = actions.delete_buffer,
-							},
-							n = {
-								["<c-d>"] = actions.delete_buffer,
-							},
-						},
-						previewer = false,
-						initial_mode = "normal",
-						-- theme = "dropdown",
-						layout_config = {
-							height = 0.4,
-							width = 0.6,
-							prompt_position = "top",
-							preview_cutoff = 120,
-						},
-					},
-					current_buffer_fuzzy_find = {
-						previewer = true,
-						layout_config = {
-							prompt_position = "top",
-							preview_cutoff = 120,
-						},
-					},
-				},
-				extensions = {
-					["ui-select"] = {
-						require("telescope.themes").get_dropdown({
-							previewer = false,
-							initial_mode = "normal",
-							sorting_strategy = "ascending",
-							layout_strategy = "horizontal",
-							layout_config = {
-								horizontal = {
-									width = 0.5,
-									height = 0.4,
-									preview_width = 0.6,
-								},
-							},
-						}),
-					},
-				},
+			vim.api.nvim_create_autocmd("User", {
+				pattern = "OilActionsPost",
+				callback = function(event)
+					if event.data.actions[1].type == "move" then
+						Snacks.rename.on_rename_file(event.data.actions[1].src_url, event.data.actions[1].dest_url)
+					end
+				end,
 			})
-
-			-- Setup project.nvim
-			require("project_nvim").setup({})
-
-			-- Load extensions
-			telescope.load_extension("ui-select")
-			telescope.load_extension("projects")
-			telescope.load_extension("fzf")
-			telescope.load_extension("hierarchy")
+			Snacks.setup({
+				picker = { enabled = true },
+				rename = { enabled = true },
+			})
 		end,
-	},
-	--TODO:
+		---@type snacks.Config
+				"<leader><space>",
+				function()
+					Snacks.picker.smart()
+				end,
+				desc = "Smart Find Files",
+			},
+			{
+				"<leader>,",
+				function()
+					Snacks.picker.buffers()
+				end,
+				desc = "Buffers",
+			},
+			{
+				"<leader>/",
+				function()
+					Snacks.picker.grep()
+				end,
+				desc = "Grep",
+			},
+			{
+				"<leader>:",
+				function()
+					Snacks.picker.command_history()
+				end,
+				desc = "Command History",
+			},
+			-- {
+			-- 	"<leader>n",
+			-- 	function()
+			-- 		Snacks.picker.notifications()
+			-- 	end,
+			-- 	desc = "Notification History",
+			-- },
+			-- {
+			-- 	"<leader>e",
+			-- 	function()
+			-- 		Snacks.explorer()
+			-- 	end,
+			-- 	desc = "File Explorer",
+			-- },
+			-- find
+			{
+				"<leader>fb",
+				function()
+					Snacks.picker.buffers()
+				end,
+				desc = "Buffers",
+			},
+			{
+				"<leader>fc",
+				function()
+					Snacks.picker.files({ cwd = vim.fn.stdpath("config") })
+				end,
+				desc = "Find Config File",
+			},
+			{
+				"<leader>ff",
+				function()
+					Snacks.picker.files()
+				end,
+				desc = "Find Files",
+			},
+			{
+				"<leader>fg",
+				function()
+					Snacks.picker.git_files()
+				end,
+				desc = "Find Git Files",
+			},
+			{
+				"<leader>fp",
+				function()
+					Snacks.picker.projects()
+				end,
+				desc = "Projects",
+			},
+			{
+				"<leader>frr",
+				function()
+					Snacks.picker.recent()
+				end,
+				desc = "Recent",
+			},
+			-- git
+			-- {
+			-- 	"<leader>gb",
+			-- 	function()
+			-- 		Snacks.picker.git_branches()
+			-- 	end,
+			-- 	desc = "Git Branches",
+			-- },
+			-- {
+			-- 	"<leader>gl",
+			-- 	function()
+			-- 		Snacks.picker.git_log()
+			-- 	end,
+			-- 	desc = "Git Log",
+			-- },
+			-- {
+			-- 	"<leader>gL",
+			-- 	function()
+			-- 		Snacks.picker.git_log_line()
+			-- 	end,
+			-- 	desc = "Git Log Line",
+			-- },
+			{
+				"<leader>gs",
+				function()
+					Snacks.picker.git_status()
+				end,
+				desc = "Git Status",
+			},
+			-- {
+			-- 	"<leader>gS",
+			-- 	function()
+			-- 		Snacks.picker.git_stash()
+			-- 	end,
+			-- 	desc = "Git Stash",
+			-- },
+			{
+				"<leader>gd",
+				function()
+					Snacks.picker.git_diff()
+				end,
+				desc = "Git Diff (Hunks)",
+			},
+			-- {
+			-- 	"<leader>gf",
+			-- 	function()
+			-- 		Snacks.picker.git_log_file()
+			-- 	end,
+			-- 	desc = "Git Log File",
+			-- },
+			-- gh
+			-- Grep
+			{
+				"<leader>b/",
+				function()
+					Snacks.picker.lines()
+				end,
+				desc = "Buffer Lines",
+			},
+			{
+				"<leader>B/",
+				function()
+					Snacks.picker.grep_buffers()
+				end,
+				desc = "Grep Open Buffers",
+			},
+			{
+				"<leader>w/",
+				function()
+					Snacks.picker.grep_word()
+				end,
+				desc = "Visual selection or word",
+				mode = { "n", "x" },
+			},
+			-- search
+			{
+				'<leader>rg"',
+				function()
+					Snacks.picker.registers()
+				end,
+				desc = "Registers",
+			},
+			{
+				"<leader>shis",
+				function()
+					Snacks.picker.search_history()
+				end,
+				desc = "Search History",
+			},
+			{
+				"<leader>sa",
+				function()
+					Snacks.picker.autocmds()
+				end,
+				desc = "Autocmds",
+			},
+			{
+				"<leader>sC",
+				function()
+					Snacks.picker.commands()
+				end,
+				desc = "Commands",
+			},
+			{
+				"<leader>sd",
+				function()
+					Snacks.picker.diagnostics()
+				end,
+				desc = "Diagnostics",
+			},
+			{
+				"<leader>sD",
+				function()
+					Snacks.picker.diagnostics_buffer()
+				end,
+				desc = "Buffer Diagnostics",
+			},
+			{
+				"<leader>sh",
+				function()
+					Snacks.picker.help()
+				end,
+				desc = "Help Pages",
+			},
+			{
+				"<leader>sH",
+				function()
+					Snacks.picker.highlights()
+				end,
+				desc = "Highlights",
+			},
+			{
+				"<leader>si",
+				function()
+					Snacks.picker.icons()
+				end,
+				desc = "Icons",
+			},
+			{
+				"<leader>sj",
+				function()
+					Snacks.picker.jumps()
+				end,
+				desc = "Jumps",
+			},
+			{
+				"<leader>sk",
+				function()
+					Snacks.picker.keymaps()
+				end,
+				desc = "Keymaps",
+			},
+			{
+				"<leader>sm",
+				function()
+					Snacks.picker.marks()
+				end,
+				desc = "Marks",
+			},
+			{
+				"<leader>sM",
+				function()
+					Snacks.picker.man()
+				end,
+				desc = "Man Pages",
+			},
+			{
+				"<leader>sp",
+				function()
+					Snacks.picker.lazy()
+				end,
+				desc = "Search for Plugin Spec",
+			},
+			{
+				"<leader>sq",
+				function()
+					Snacks.picker.qflist()
+				end,
+				desc = "Quickfix List",
+			},
+			{
+				"<leader>sR",
+				function()
+					Snacks.picker.resume()
+				end,
+				desc = "Resume",
+			},
+			{
+				"<leader>su",
+				function()
+					Snacks.picker.undo()
+				end,
+				desc = "Undo History",
+			{
+				"<leader>suC",
+				function()
+					Snacks.picker.colorschemes()
+				end,
+				desc = "Colorschemes",
+			},
+			-- LSP
+			{
+				"gd",
+				function()
+					Snacks.picker.lsp_definitions()
+				end,
+				desc = "Goto Definition",
+			},
+			{
+				"gD",
+				function()
+					Snacks.picker.lsp_declarations()
+				end,
+				desc = "Goto Declaration",
+			},
+			{
+				"gr",
+				function()
+					Snacks.picker.lsp_references()
+				end,
+				nowait = true,
+				desc = "References",
+			},
+			{
+				"gI",
+				function()
+					Snacks.picker.lsp_implementations()
+				end,
+				desc = "Goto Implementation",
+			},
+			{
+				"gy",
+				function()
+					Snacks.picker.lsp_type_definitions()
+				end,
+				desc = "Goto T[y]pe Definition",
+			},
+			{
+				"gai",
+				function()
+					Snacks.picker.lsp_incoming_calls()
+				end,
+				desc = "C[a]lls Incoming",
+			},
+			{
+				"gao",
+				function()
+					Snacks.picker.lsp_outgoing_calls()
+				end,
+				desc = "C[a]lls Outgoing",
+			},
+			{
+				"<leader>ss",
+				function()
+					Snacks.picker.lsp_symbols()
+				end,
+				desc = "LSP Symbols",
+			},
+			{
+				"<leader>sS",
+				function()
+					Snacks.picker.lsp_workspace_symbols()
+				end,
+				desc = "LSP Workspace Symbols",
+			},
+			-- Other	--TODO:
 	{
 		"folke/todo-comments.nvim",
 		keys = { { "<leader>ltd" } },
