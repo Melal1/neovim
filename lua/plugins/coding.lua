@@ -69,58 +69,55 @@ return {
 				function()
 					require("conform").format({ lsp_format = "fallback" })
 				end,
-				desc = "Trigger formating",
+				desc = "Trigger formatting",
 			},
 		},
-		opts = {},
-		config = function()
-			require("conform").setup({
-				formatters_by_ft = {
-					python = {
-						-- To fix auto-fixable lint errors.
-						"ruff_fix",
-						-- To run the Ruff formatter.
-						"ruff_format",
-						-- To organize the imports.
-						"ruff_organize_imports",
-					},
-					lua = { "stylua" },
-					javascript = { "prettier" },
-					typescript = { "prettier" },
-					cpp = { "clang_format" },
-					nix = { "nixpkgs_fmt" },
+		opts = {
+			formatters_by_ft = {
+				python = { "ruff_fix", "ruff_format", "ruff_organize_imports" },
+				xml = { "xmllint" },
+				axaml = { "xstyler", "xmllint", stop_after_first = true },
+				lua = { "stylua" },
+				javascript = { "prettier" },
+				typescript = { "prettier" },
+				cpp = { "clang_format" },
+				nix = { "nixpkgs_fmt" },
+			},
+			formatters = {
+				xstyler = {
+					command = "xaml-styler",
+					args = { "-f", "$FILENAME" },
+					stdin = false,
 				},
-				formatters = {
-					clang_format = {
-						prepend_args = {
-							"--style={ \
-        BasedOnStyle: LLVM, \
-        IndentWidth: 2, \
-        UseTab: Never, \
-        ColumnLimit: 120, \
-        BreakBeforeBraces: Allman, \
-        AlignArrayOfStructures: None, \
-        SeparateDefinitionBlocks: Always, \
-        EmptyLineBeforeAccessModifier: LogicalBlock, \
-        AllowShortFunctionsOnASingleLine: None, \
-        BinPackArguments: false, \
-        BinPackParameters: false, \
-        AlignAfterOpenBracket: AlwaysBreak, \
-        AllowAllArgumentsOnNextLine: true, \
-        AllowAllParametersOfDeclarationOnNextLine: true, \
-      }",
-						},
+				clang_format = {
+					prepend_args = {
+						"--style={ \
+            BasedOnStyle: LLVM, \
+            IndentWidth: 2, \
+            UseTab: Never, \
+            ColumnLimit: 120, \
+            BreakBeforeBraces: Allman, \
+            AlignArrayOfStructures: None, \
+            SeparateDefinitionBlocks: Always, \
+            EmptyLineBeforeAccessModifier: LogicalBlock, \
+            AllowShortFunctionsOnASingleLine: None, \
+            BinPackArguments: false, \
+            BinPackParameters: false, \
+            AlignAfterOpenBracket: AlwaysBreak, \
+            AllowAllArgumentsOnNextLine: true, \
+            AllowAllParametersOfDeclarationOnNextLine: true, \
+          }",
 					},
 				},
+			},
 
-				format_on_save = function(bufnr)
-					if vim.g.disable_autoformat or vim.b[bufnr].disable_autoformat then
-						return
-					end
-					return { timeout_ms = 500, lsp_format = "fallback" }
-				end,
-			})
-		end,
+			format_on_save = function(bufnr)
+				if vim.g.disable_autoformat or vim.b[bufnr].disable_autoformat then
+					return
+				end
+				return { timeout_ms = 500, lsp_format = "fallback" }
+			end,
+		},
 	},
 	--Cmp : Blink
 	{
@@ -189,12 +186,12 @@ return {
 					},
 				},
 				ghost_text = {
-					enabled = false,
-					show_with_menu = false,
+					enabled = true,
+					show_with_menu = true,
 				},
 				menu = {
-					scrollbar = false,
-					auto_show = false,
+					scrollbar = true,
+					auto_show = true,
 					border = "single",
 					draw = {
 						-- padding = { 1, 1 },
@@ -265,7 +262,7 @@ return {
 					copilot = {
 						name = "copilot",
 						module = "blink-copilot",
-						score_offset = 8,
+						score_offset = 9999,
 						async = true,
 					},
 					lazydev = {
@@ -277,7 +274,7 @@ return {
 						score_offset = 7,
 					},
 					lsp = {
-						score_offset = 9,
+						score_offset = 1000,
 					},
 					snippets = {
 						score_offset = 10,
@@ -308,7 +305,7 @@ return {
 		build = ":TSUpdate",
 		config = function()
 			local ts = require("nvim-treesitter")
-			ts.install({"c_sharp", "python", "cpp", "bash", "lua", "rust", "make", "java", "cmake", "qmljs" })
+			ts.install({ "c_sharp", "python", "cpp", "bash", "lua", "rust", "make", "java", "cmake", "qmljs" })
 			vim.api.nvim_create_autocmd("FileType", {
 				callback = function(details)
 					vim.defer_fn(function()

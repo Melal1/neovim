@@ -54,6 +54,20 @@ return {
 			},
 		},
 	},
+	{
+		"windwp/nvim-ts-autotag",
+		opts = {
+			opts = {
+				enable_close = true, -- Auto close tags (e.g., <Button> -> <Button></Button>)
+				enable_rename = true, -- Auto rename paired tags when editing
+				enable_close_on_slash = true, -- Auto close on trailing </
+			},
+			aliases = {
+				["axaml"] = "html",
+				["xaml"] = "html",
+			},
+		},
+	},
 	--AutoPair: blink.pairs
 	{
 		"saghen/blink.pairs",

@@ -116,8 +116,15 @@ return {
 	-- 	end,
 	-- },
 
+	-- lazy.nvim
 	{
-    "Melal1/nvim-colorpicker",
+		"catgoose/nvim-colorizer.lua",
+		event = "BufReadPre",
+		opts = {},
+	},
+	{
+		"Melal1/nvim-colorpicker",
+		enabled = false,
 		dependencies = { "mikevskater/nvim-float" },
 		cmd = { "ColorPicker", "ColorPickerAtCursor", "ColorPickerMini" },
 		keys = {
@@ -157,7 +164,7 @@ return {
 				"table",
 				"if_statement",
 			},
-			exclude = {"oil"}, -- exclude these filetypes,
+			exclude = { "oil" }, -- exclude these filetypes,
 		},
 		keys = { { "<leader>ltw", ":Twilight<CR>" } },
 	},

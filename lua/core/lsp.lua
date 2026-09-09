@@ -6,13 +6,14 @@ vim.lsp.enable({
 	"nil_ls",
 	"jsonls",
 	-- "qmlls",
+  "avalonia",
 	"clangd",
 	"qmlgolsp",
 	-- "harper_ls",
 })
 
 vim.api.nvim_create_autocmd("LspAttach", {
-	group = vim.api.nvim_create_augroup("lsp_attach_disable_ruff_hover", { clear = true }),
+	group = vim.api.nvim_create_augroup("lsp_attach_custom_capabilities", { clear = true }),
 	callback = function(args)
 		local client = vim.lsp.get_client_by_id(args.data.client_id)
 		if client == nil then
@@ -81,4 +82,4 @@ vim.keymap.set("n", "<leader>ga", function()
 	for _, c in ipairs(clients) do
 		vim.notify(vim.inspect(c.name))
 	end
-end)
+end, { desc = "Show active LSP clients" })

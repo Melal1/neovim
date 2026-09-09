@@ -2,7 +2,7 @@ local map = vim.keymap.set
 
 map("n", "<C-q>", "<cmd>wqa!<CR>")
 map("n", "<leader><C-q>", "<cmd>qa!<CR>")
-map("n", "<leader>w","<cmd>w<CR>")
+map("n", "<leader>w", "<cmd>w<CR>")
 
 -- map("i", "jk", "<ESC>", { desc = "Exit insert mode quickly" }) -- I am lefting this for caps lock :(
 
@@ -116,9 +116,6 @@ map("n", "<leader>pv", "<cmd>Oil<CR>", { desc = "Open file explorer" })
 
 map("n", "<leader>x", "<cmd>!chmod +x %<CR>", { silent = true, desc = "Make current file executable" })
 
--- Insert blank line below/above without leaving normal mode
-map("n", "<CR>", "o<ESC>k", { desc = "Insert blank line below without leaving normal mode" })
-map("n", "<S-CR>", "O<ESC>j", { desc = "Insert blank line above without leaving normal mode" })
 
 -- Move selected lines up/down in visual mode
 map("x", "<C-j>", ":m '>+1<CR>gv=gv", { desc = "Move selected lines down", silent = true })

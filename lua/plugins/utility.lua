@@ -4,7 +4,7 @@ return {
 	{
 		"GustavEikaas/easy-dotnet.nvim",
 		dependencies = { "nvim-lua/plenary.nvim", "folke/snacks.nvim" },
-		ft = "cs",
+		ft = { "cs", "axaml" },
 		config = function()
 			local dotnet = require("easy-dotnet")
 			dotnet.setup({
@@ -24,7 +24,6 @@ return {
 					--   "netcoredbg" (default) — Samsung netcoredbg
 					--   "dncdbg"               — viewizard/dncdbg (a fork of netcoredbg with a richer set of features)
 					--   "sharpdbg"             — MattParkerDev/sharpdbg (a new debugger written in C#)
-					engine = "netcoredbg",
 					console = "externalTerminal", -- Controls where the target app runs: "integratedTerminal" (Neovim buffer) or "externalTerminal" (OS window)
 					apply_value_converters = true,
 					auto_register_dap = true,
@@ -35,24 +34,26 @@ return {
 			})
 
 			-- Run / watch (primary entrypoints from `:Dotnet run` family)
-			vim.keymap.set("n", "<leader>nr",  dotnet.run,                 { desc = "dotnet: run (picker)" })
-			vim.keymap.set("n", "<leader>nR", dotnet.run_default,         { desc = "dotnet: run default project" })
-			vim.keymap.set("n", "<leader>np",  dotnet.run_profile,         { desc = "dotnet: run --launch-profile" })
-			vim.keymap.set("n", "<leader>nP",  dotnet.run_profile_default, { desc = "dotnet: run default with profile" })
-			vim.keymap.set("n", "<leader>nw",  dotnet.watch,               { desc = "dotnet: watch (picker)" })
-			vim.keymap.set("n", "<leader>nW", dotnet.watch_default,        { desc = "dotnet: watch default project" })
+			vim.keymap.set("n", "<leader>nr", dotnet.run, { desc = "dotnet: run (picker)" })
+			vim.keymap.set("n", "<leader>nR", dotnet.run_default, { desc = "dotnet: run default project" })
+			vim.keymap.set("n", "<leader>np", dotnet.run_profile, { desc = "dotnet: run --launch-profile" })
+			vim.keymap.set("n", "<leader>nP", dotnet.run_profile_default, { desc = "dotnet: run default with profile" })
+			vim.keymap.set("n", "<leader>nw", dotnet.watch, { desc = "dotnet: watch (picker)" })
+			vim.keymap.set("n", "<leader>nW", dotnet.watch_default, { desc = "dotnet: watch default project" })
 
 			-- Build / test / clean
-			vim.keymap.set("n", "<leader>nb", dotnet.build,    { desc = "dotnet: build (picker)" })
-			vim.keymap.set("n", "<leader>nt", dotnet.test,     { desc = "dotnet: test (picker)" })
-			vim.keymap.set("n", "<leader>nc", dotnet.clean,     { desc = "dotnet: clean" })
+			vim.keymap.set("n", "<leader>nb", dotnet.build, { desc = "dotnet: build (picker)" })
+			vim.keymap.set("n", "<leader>nt", dotnet.test, { desc = "dotnet: test (picker)" })
+			vim.keymap.set("n", "<leader>nc", dotnet.clean, { desc = "dotnet: clean" })
 
 			-- Debug (bundled netcoredbg via DAP)
-			vim.keymap.set("n", "<leader>nd",  dotnet.debug,         { desc = "dotnet: debug (picker)" })
+			vim.keymap.set("n", "<leader>nd", dotnet.debug, { desc = "dotnet: debug (picker)" })
 			vim.keymap.set("n", "<leader>nD", dotnet.debug_default, { desc = "dotnet: debug default" })
 
 			-- Toggle the Rider-like test runner window
 			vim.keymap.set("n", "<leader>no", dotnet.testrunner, { desc = "dotnet: toggle test runner" })
+
+			require("config.utils.dotnet.avalonia").setup({ notify = false, confirm = false })
 		end,
 	},
 
@@ -61,14 +62,32 @@ return {
 		---@module 'roslyn.config'
 		---@type RoslynNvimConfig
 		opts = {
-			-- Let the Roslyn LSP server manage filewatching itself instead of
-			-- Neovim's libuv recursive watcher (which spawns one inotify watch
-			-- per file under the workspace root — was hitting the 524288
-			-- max_user_watches cap with ~262k watches per client instance).
-			filewatching = "roslyn",
-			-- your configuration comes here; leave empty for default settings
+			filewatching = "off",
 		},
-		ft = { "cs" },
+		dependencies = {
+			{
+				"khoido2003/roslyn-filewatch.nvim",
+				build = "nvim -l build.lua --", -- Compiles or downloads the Native Rust module fallback
+				opts = {
+					watch_extensions = {
+						".cs",
+						".csproj",
+						".sln",
+						".slnx",
+						".slnf",
+						".props",
+						".targets",
+						".razor",
+						".cshtml",
+						".xaml",
+						".axaml",
+					},
+				},
+				config = function(_, opts)
+					require("roslyn_filewatch").setup(opts)
+				end,
+			},
+		},
 	},
 	-- BuildSystem: make.nvim
 	-- {
@@ -585,10 +604,18 @@ return {
 			Snacks.setup({
 				picker = { enabled = true },
 				rename = { enabled = true },
+				toggle = {},
 			})
 		end,
 		---@type snacks.Config
 		keys = {
+			{
+				"<leader>ft",
+				function()
+					Snacks.terminal(nil, { win = { position = "float" } })
+				end,
+				desc = "Toggle floating term",
+			},
 			{
 				"<leader><space>",
 				function()

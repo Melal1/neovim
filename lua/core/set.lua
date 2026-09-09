@@ -75,3 +75,11 @@ vim.api.nvim_set_hl(0, "CursorLine", { bg = "#1b1b26", bold = true }) -- example
 vim.g.neovide_opacity = 0.8
 vim.g.neovide_refresh_rate = 400
 vim.g.neovide_font = "FiraCode Nerd Font:h14"
+vim.filetype.add({
+	extension = {
+		axaml = "axaml",
+		xaml = "xaml",
+	},
+})
+vim.treesitter.language.register("xml", "axaml")
+vim.treesitter.language.register("xml", "xaml")
